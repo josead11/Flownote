@@ -192,7 +192,8 @@ body {
 }
 .auth-google:hover { background:rgba(255,255,255,0.14); }
 
-.auth-err { color:#ff6b6b; font-size:12px; text-align:center; margin-top:10px; min-height:18px; }
+.auth-err { color:#ff6b6b; font-size:12px; text-align:center; margin-top:10px; min-height:18px; padding:8px; background:rgba(255,100,100,0.1); border-radius:8px; display:none; }
+.auth-err:not(:empty) { display:block; }
 .auth-demo { text-align:center; margin-top:16px; font-size:12px; color:rgba(255,255,255,0.35); cursor:pointer; }
 .auth-demo:hover { color:var(--teal); }
 
@@ -704,48 +705,11 @@ select.tb-sel {
 </head>
 <body>
 
-<!-- ══════════ AUTH SCREEN ══════════ -->
-<div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-icon">📝</div>
-      <div class="auth-logo-text">Flow<span>Notes</span></div>
-    </div>
-    <div class="auth-title" id="auth-title">Bienvenido de nuevo</div>
-    <div class="auth-sub" id="auth-sub">Inicia sesión para acceder a tus notas desde cualquier dispositivo</div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchTab('login')">Iniciar sesión</button>
-      <button class="auth-tab" onclick="switchTab('register')">Crear cuenta</button>
-    </div>
-    <div id="auth-name-field" class="auth-field" style="display:none">
-      <label>NOMBRE</label>
-      <input type="text" id="auth-name" placeholder="Tu nombre">
-    </div>
-    <div class="auth-field">
-      <label>CORREO ELECTRÓNICO</label>
-      <input type="email" id="auth-email" placeholder="tu@correo.com">
-    </div>
-    <div class="auth-field">
-      <label>CONTRASEÑA</label>
-      <input type="password" id="auth-pass" placeholder="••••••••">
-    </div>
-    <button class="auth-btn" id="auth-main-btn" onclick="doAuth()">Iniciar sesión</button>
-    <div class="auth-divider">o continúa con</div>
-    <button class="auth-google" onclick="doGoogleAuth()">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      Continuar con Google
-    </button>
-    <div class="auth-err" id="auth-err"></div>
-    <div class="auth-demo" id="auth-demo-btn">🚀 Continuar sin registrarse →</div>
-  </div>
-</div>
-
 <!-- ══════════ APP ══════════ -->
-<div id="app" style="display:none">
+<div id="app">
 
   <!-- TOP BAR -->
   <div id="topbar">
-    <button id="mobile-menu-btn" onclick="toggleMobileLeft()">☰</button>
     <div class="app-logo">
       <div class="app-logo-icon">📝</div>
       <div class="app-logo-name">Flow<span>Notes</span></div>
@@ -757,10 +721,9 @@ select.tb-sel {
     </div>
     <div class="topbar-spacer"></div>
     <button class="tb-btn" id="theme-btn" title="Tema oscuro/claro" onclick="toggleTheme()">🌙</button>
-    <button class="tb-btn" title="Guía Play Store" onclick="document.getElementById('guide-overlay').classList.add('open')">🚀</button>
     <button class="user-chip" id="user-chip" onclick="toggleUserMenu()">
-      <div class="user-avatar" id="user-avatar">U</div>
-      <span id="user-label">Usuario</span>
+      <div class="user-avatar">📝</div>
+      <span id="user-label">Mis Notas</span>
     </button>
   </div>
 
@@ -781,7 +744,7 @@ select.tb-sel {
           <button class="filter-tab" data-filter="Ideas">Ideas</button>
         </div>
         <div id="notes-list"></div>
-        <div id="sync-bar"><div class="sync-dot"></div><span id="sync-label">Sincronizado</span></div>
+        <div id="sync-bar"><div class="sync-dot"></div><span id="sync-label">Guardado localmente</span></div>
         <button id="fab" onclick="newNote()">✏️ Nueva nota</button>
       </div>
       <button id="left-tab" onclick="toggleLeft()" title="Notas">
@@ -796,8 +759,8 @@ select.tb-sel {
         <div class="tb-group">
           <select class="tb-sel" onchange="execFmt('formatBlock',this.value)">
             <option value="p">Normal</option>
-            <option value="h1">Título 1</option>
-            <option value="h2">Título 2</option>
+            <option value="h1">Titulo 1</option>
+            <option value="h2">Titulo 2</option>
           </select>
         </div>
         <div class="tb-group">
@@ -818,11 +781,11 @@ select.tb-sel {
         </div>
       </div>
       <div id="editor-meta">
-        <input id="note-title-input" type="text" placeholder="Título de la nota" maxlength="100">
+        <input id="note-title-input" type="text" placeholder="Titulo de la nota" maxlength="100">
         <div id="note-info">
           <span id="note-date-display" style="color:var(--ink3);font-size:12px"></span>
           <select class="meta-sel" id="tag-select">
-            <option value="">Sin categoría</option>
+            <option value="">Sin categoria</option>
             <option value="Personal">🏠 Personal</option>
             <option value="Trabajo">💼 Trabajo</option>
             <option value="Ideas">💡 Ideas</option>
@@ -844,7 +807,6 @@ select.tb-sel {
     <div id="empty-state" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink3);gap:14px;background:var(--bg)">
       <div class="es-icon-wrap">📒</div>
       <p>Selecciona o crea una nota</p>
-      <small>Tus notas se sincronizan automáticamente</small>
       <button onclick="newNote()" style="margin-top:8px;background:var(--teal);color:#fff;border:none;border-radius:20px;padding:10px 24px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;">✏️ Nueva nota</button>
     </div>
 
@@ -862,7 +824,6 @@ select.tb-sel {
           <button class="rtab active" onclick="switchRTab('calc')">🔢 Calc</button>
           <button class="rtab" onclick="switchRTab('rcalendar')">📅 Agenda</button>
         </div>
-        <!-- Calculadora -->
         <div id="rpanel-calc" class="rpanel active">
           <div id="calculator">
             <div id="calc-display">
@@ -871,13 +832,13 @@ select.tb-sel {
             </div>
             <div id="calc-keys">
               <button class="ck op" onclick="calcOp('AC')">AC</button>
-              <button class="ck op" onclick="calcOp('+/-')">\+/-</button>
+              <button class="ck op" onclick="calcOp('+/-')">+/-</button>
               <button class="ck op" onclick="calcOp('%')">%</button>
-              <button class="ck fn" onclick="calcOp('÷')">÷</button>
+              <button class="ck fn" onclick="calcOp('/')">÷</button>
               <button class="ck" onclick="calcKey('7')">7</button>
               <button class="ck" onclick="calcKey('8')">8</button>
               <button class="ck" onclick="calcKey('9')">9</button>
-              <button class="ck fn" onclick="calcOp('×')">×</button>
+              <button class="ck fn" onclick="calcOp('*')">×</button>
               <button class="ck" onclick="calcKey('4')">4</button>
               <button class="ck" onclick="calcKey('5')">5</button>
               <button class="ck" onclick="calcKey('6')">6</button>
@@ -885,18 +846,17 @@ select.tb-sel {
               <button class="ck" onclick="calcKey('1')">1</button>
               <button class="ck" onclick="calcKey('2')">2</button>
               <button class="ck" onclick="calcKey('3')">3</button>
-              <button class="ck fn" onclick="calcOp('+')">\+</button>
+              <button class="ck fn" onclick="calcOp('+')">+</button>
               <button class="ck wide" onclick="calcKey('0')">0</button>
               <button class="ck" onclick="calcKey('.')">.</button>
-              <button class="ck eq" onclick="calcOp('=')">═</button>
+              <button class="ck eq" onclick="calcOp('=')">=</button>
             </div>
           </div>
         </div>
-        <!-- Calendario -->
         <div id="rpanel-rcalendar" class="rpanel">
           <div id="calendar-widget"></div>
           <div id="events-list">
-            <div class="ev-header" style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:var(--ink3)">PRÓXIMOS EVENTOS</div>
+            <div class="ev-header" style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:var(--ink3)">PROXIMOS EVENTOS</div>
             <div id="events-items"></div>
             <div class="add-event-wrap">
               <input id="ev-input" type="text" placeholder="Agregar evento...">
@@ -908,18 +868,17 @@ select.tb-sel {
       </div>
     </div>
 
-  </div><!-- end main-layout -->
-</div><!-- end app -->
+  </div>
+</div>
 
 <!-- USER MENU -->
 <div id="user-menu">
   <div class="user-menu-header">
-    <div class="user-menu-email" id="um-email">usuario@correo.com</div>
-    <div class="user-menu-plan">✨ FlowNotes Free</div>
+    <div class="user-menu-email">FlowNotes</div>
+    <div class="user-menu-plan">📱 Guardado en este dispositivo</div>
   </div>
-  <button onclick="showGuide()">🚀 Publicar en Play Store</button>
   <button onclick="exportAll()">📤 Exportar notas</button>
-  <button onclick="logOut()" class="danger">🚪 Cerrar sesión</button>
+  <button onclick="importNotes()">📥 Importar notas</button>
 </div>
 
 <!-- CTX MENU -->
@@ -933,635 +892,374 @@ select.tb-sel {
 <!-- TOAST -->
 <div id="toast"><span id="toast-icon"></span><span id="toast-msg"></span></div>
 
-<!-- ══ GLOBAL BRIDGE: expone funciones del módulo al HTML ══ -->
 <script>
-// Estas funciones son llamadas por los botones HTML antes de que el módulo cargue.
-// El módulo las reemplaza con window.X = realFn cuando termina de cargar.
-function _stub(name){ return function(){ 
-  var args=arguments; 
-  var tries=0;
-  var wait=setInterval(function(){
-    tries++;
-    if(window['_real_'+name]){ clearInterval(wait); window['_real_'+name].apply(null,args); }
-    if(tries>50) clearInterval(wait);
-  },50);
-};}
-var switchTab=_stub('switchTab');
-var doAuth=_stub('doAuth');
-var doGoogleAuth=_stub('doGoogleAuth');
-var logOut=_stub('logOut');
-var newNote=_stub('newNote');
-var openNote=_stub('openNote');
-var saveNote=_stub('saveNote');
-var switchPanel=_stub('switchPanel');
-var toggleUserMenu=_stub('toggleUserMenu');
-var toggleSidebar=_stub('toggleSidebar');
-var closeSidebar=_stub('closeSidebar');
-var toggleTheme=_stub('toggleTheme');
-var exportAll=_stub('exportAll');
-var showGuide=_stub('showGuide');
-var fmt=_stub('fmt');
-var execFmt=_stub('execFmt');
-var insertCheck=_stub('insertCheck');
-var showCtx=_stub('showCtx');
-var ctxPin=_stub('ctxPin');
-var ctxDupe=_stub('ctxDupe');
-var ctxDel=_stub('ctxDel');
-var calNav=_stub('calNav');
-var addEvent=_stub('addEvent');
-var delEvent=_stub('delEvent');
-var calcKey=_stub('calcKey');
-var calcOp=_stub('calcOp');
-var renderList=_stub('renderList');
-var toggleLeft=_stub('toggleLeft');
-var toggleRight=_stub('toggleRight');
-var switchRTab=_stub('switchRTab');
-var toggleMobileLeft=_stub('toggleMobileLeft');
-var toggleMobileRight=_stub('toggleMobileRight');
-var closeAllDrawers=_stub('closeAllDrawers');
-</script>
-
-<!-- ══ FIREBASE SDK ══ -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-         GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
-         updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc,
-         onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAN5Icn1p2GPDgcNxBGEi-8YKzvFB-zp9U",
-  authDomain: "flownote-a64ed.firebaseapp.com",
-  projectId: "flownote-a64ed",
-  storageBucket: "flownote-a64ed.firebasestorage.app",
-  messagingSenderId: "636232931135",
-  appId: "1:636232931135:web:f3aa10f539444a5a43e58a"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const db    = getFirestore(fbApp);
-
-let currentUser = null, notes = [], currentId = null;
-let ctxTargetId = null, currentFilter = 'all', authMode = 'login';
-let unsubNotes = null;
+// ══════════ STORAGE ══════════════════════════════════════════════════════
+const STORAGE_KEY = 'flownotes_data';
+let notes = [];
+let currentId = null;
+let ctxTargetId = null;
+let currentFilter = 'all';
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
-// ── Firestore ─────────────────────────────────────────────────────────────
-async function persistNote(note){
-  if(!currentUser||window._demoMode){guestSave(note);return;}
-  setSyncing();
-  try{ await setDoc(doc(db,'users',currentUser.uid,'notes',note.id),note); setSynced(); }
-  catch(e){ console.error(e); setError(); }
-}
-async function removeNote(id){
-  if(!currentUser||window._demoMode){ notes=notes.filter(n=>n.id!==id); guestFlush(); return; }
-  await deleteDoc(doc(db,'users',currentUser.uid,'notes',id));
-}
-function listenNotes(){
-  if(unsubNotes) unsubNotes();
-  const q=query(collection(db,'users',currentUser.uid,'notes'),orderBy('created','desc'));
-  unsubNotes=onSnapshot(q,snap=>{
-    notes=snap.docs.map(d=>d.data());
-    renderList();
-    // If editor is open for a note, sync title only if user isn't typing
-    if(currentId){
-      const n=notes.find(x=>x.id===currentId);
-      const active=document.activeElement;
-      const titleEl=document.getElementById('note-title-input');
-      const contentEl=document.getElementById('editor-content');
-      if(n && active!==titleEl && active!==contentEl){
-        titleEl.value=n.title;
-        contentEl.innerHTML=n.content;
-      }
-      // If note just appeared in DB after newNote(), populate editor
-      if(n && !titleEl.value && !contentEl.innerHTML){
-        titleEl.value=n.title;
-        contentEl.innerHTML=n.content;
-      }
-    }
-  });
-}
-async function seedWelcome(){
-  await persistNote({id:uid(),title:'Bienvenido a FlowNotes ✨',
-    content:'<p>Tus notas están <b>guardadas en Firebase</b> y disponibles en cualquier dispositivo.</p><p>✅ Sincronización en tiempo real</p><p>✅ Login con correo o Google</p><p>✅ Datos seguros en la nube</p>',
-    tag:'Personal',pinned:true,created:new Date().toISOString()});
-}
-
-// ── Demo mode (sin cuenta) ────────────────────────────────────────────────
-window._demoMode=false;
-window._real__demoMode=false;
-function guestSave(n){
-  const i=notes.findIndex(x=>x.id===n.id);
-  if(i>-1)notes[i]=n; else notes.unshift(n);
-  guestFlush(); setSynced(); renderList();
-}
-function guestFlush(){ localStorage.setItem('fn_guest',JSON.stringify(notes)); }
-
-// ── Auth ──────────────────────────────────────────────────────────────────
-function switchTab(mode){
-  authMode=mode;
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',mode==='login'?i===0:i===1));
-  document.getElementById('auth-name-field').style.display=mode==='register'?'block':'none';
-  document.getElementById('auth-title').textContent=mode==='login'?'Bienvenido de nuevo':'Crea tu cuenta';
-  document.getElementById('auth-sub').textContent=mode==='login'?'Inicia sesión para acceder a tus notas desde cualquier dispositivo':'Regístrate gratis y guarda tus notas en la nube';
-  document.getElementById('auth-main-btn').textContent=mode==='login'?'Iniciar sesión':'Crear cuenta';
-  document.getElementById('auth-err').textContent='';
-}
-window.switchTab=switchTab;
-window._real_switchTab=switchTab;
-
-async function doAuth(){
-  const email=document.getElementById('auth-email').value.trim();
-  const pass=document.getElementById('auth-pass').value;
-  const name=document.getElementById('auth-name').value.trim();
-  if(!email||!pass){showErr('Completa todos los campos.');return;}
-  if(pass.length<6){showErr('La contraseña debe tener al menos 6 caracteres.');return;}
-  document.getElementById('auth-main-btn').textContent='⏳ Cargando...';
-  try{
-    if(authMode==='register'){
-      const cred=await createUserWithEmailAndPassword(auth,email,pass);
-      await updateProfile(cred.user,{displayName:name||email.split('@')[0]});
-      await seedWelcome();
-    } else {
-      await signInWithEmailAndPassword(auth,email,pass);
-    }
-  } catch(e){
-    const msgs={'auth/email-already-in-use':'Este correo ya está registrado.','auth/user-not-found':'Correo no encontrado.',
-      'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-email':'Correo no válido.',
-      'auth/invalid-credential':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Espera.'};
-    showErr(msgs[e.code]||'Error: '+e.message);
-    document.getElementById('auth-main-btn').textContent=authMode==='login'?'Iniciar sesión':'Crear cuenta';
+function loadNotes(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{ notes = JSON.parse(raw); }
+    catch(e){ notes = []; }
+  } else {
+    // Notas de bienvenida
+    notes = [
+      { id:uid(), title:'Bienvenido a FlowNotes 👋', content:'<p>Tus notas se guardan <b>automaticamente</b> en este dispositivo.</p><p>✅ Sin necesidad de cuenta</p><p>✅ Funciona sin internet</p><p>✅ Tus datos son privados</p>', tag:'Personal', pinned:true, created:new Date().toISOString() },
+      { id:uid(), title:'Como usar FlowNotes', content:'<p>📋 <b>Panel izquierdo</b> — toca la pestana para ver tus notas</p><p>🔧 <b>Panel derecho</b> — calculadora y agenda</p><p>🌙 <b>Tema oscuro</b> — boton arriba a la derecha</p><p>💾 <b>Guardar</b> — automatico cada vez que escribes</p>', tag:'Ideas', pinned:false, created:new Date(Date.now()-86400000).toISOString() }
+    ];
+    saveNotes();
   }
 }
-window.doAuth=doAuth;
-window._real_doAuth=doAuth;
 
-async function doGoogleAuth(){
-  try{ await signInWithPopup(auth,new GoogleAuthProvider()); }
-  catch(e){ showErr('Error con Google: '+e.message); }
-}
-window.doGoogleAuth=doGoogleAuth;
-window._real_doGoogleAuth=doGoogleAuth;
-
-async function logOut(){
-  window._demoMode=false;
-window._real__demoMode=false;
-  if(unsubNotes)unsubNotes();
-  if(auth.currentUser) await signOut(auth);
-  notes=[];currentId=null;
-  document.getElementById('app').style.display='none';
-  document.getElementById('auth-screen').style.display='flex';
-  document.getElementById('editor-area').style.display='none';
-  document.getElementById('empty-state').style.display='';
-  document.getElementById('user-menu').style.display='none';
-}
-window.logOut=logOut;
-window._real_logOut=logOut;
-
-onAuthStateChanged(auth,user=>{
-  if(user){ currentUser=user; enterApp(user); }
-});
-
-function enterApp(user){
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('app').style.flexDirection='column';
-  const name=user.displayName||user.email.split('@')[0];
-  document.getElementById('user-avatar').textContent=name[0].toUpperCase();
-  document.getElementById('user-label').textContent=name.split(' ')[0];
-  document.getElementById('um-email').textContent=user.email||'Demo';
-  if(!window._demoMode) listenNotes();
-  else renderList();
-  toast('🎉','¡Hola, '+name.split(' ')[0]+'!');
+function saveNotes(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  setSynced();
 }
 
-function showErr(m){document.getElementById('auth-err').textContent=m;}
-
-// ── Render ────────────────────────────────────────────────────────────────
-function renderList(filter=currentFilter,q=''){
-  const list=document.getElementById('notes-list');
-  const sq=q.toLowerCase();
-  let items=[...notes].sort((a,b)=>(b.pinned-a.pinned)||new Date(b.created)-new Date(a.created));
-  if(filter==='pinned')items=items.filter(n=>n.pinned);
-  else if(filter!=='all')items=items.filter(n=>n.tag===filter);
-  if(sq)items=items.filter(n=>n.title.toLowerCase().includes(sq)||strip(n.content).toLowerCase().includes(sq));
+// ══════════ RENDER ════════════════════════════════════════════════════════
+function renderList(filter, q){
+  filter = filter || currentFilter;
+  q = (q||'').toLowerCase();
+  const list = document.getElementById('notes-list');
+  let items = [...notes].sort((a,b)=>(b.pinned-a.pinned)||new Date(b.created)-new Date(a.created));
+  if(filter==='pinned') items=items.filter(n=>n.pinned);
+  else if(filter!=='all') items=items.filter(n=>n.tag===filter);
+  if(q) items=items.filter(n=>n.title.toLowerCase().includes(q)||strip(n.content).toLowerCase().includes(q));
   document.getElementById('notes-count').textContent=items.length+(items.length===1?' nota':' notas');
   list.innerHTML=items.map(n=>`
     <div class="note-item${n.id===currentId?' active':''}${n.pinned?' pinned':''}"
       data-id="${n.id}" onclick="openNote('${n.id}')" oncontextmenu="showCtx(event,'${n.id}')">
       <div class="ni-pin">📌</div>
-      <div class="ni-title">${esc(n.title)||'Sin título'}</div>
-      <div class="ni-preview">${esc(strip(n.content)).slice(0,65)||'Nota vacía'}</div>
+      <div class="ni-title">${esc(n.title)||'Sin titulo'}</div>
+      <div class="ni-preview">${esc(strip(n.content)).slice(0,65)||'Nota vacia'}</div>
       <div class="ni-meta">
         <span class="ni-date">${fmtDate(n.created)}</span>
         ${n.tag?`<span class="ni-tag tag-${n.tag.toLowerCase()}">${n.tag}</span>`:''}
       </div>
     </div>`).join('');
 }
-window.renderList=renderList;
-window._real_renderList=renderList;
+
 function strip(h){const d=document.createElement('div');d.innerHTML=h;return d.textContent||'';}
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-function fmtDate(iso){const d=new Date(iso),diff=(Date.now()-d)/1000;
+function fmtDate(iso){
+  const d=new Date(iso),diff=(Date.now()-d)/1000;
   if(diff<60)return 'Ahora';if(diff<3600)return ~~(diff/60)+' min';
   if(diff<86400)return ~~(diff/3600)+' h';if(diff<604800)return ~~(diff/86400)+' d';
-  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'});}
+  return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+}
 
-// ── Editor ────────────────────────────────────────────────────────────────
+// ══════════ EDITOR ════════════════════════════════════════════════════════
 function openNote(id){
   currentId=id;
-  const n=notes.find(x=>x.id===id);
-  if(!n){
-    // Note not in array yet — show empty editor and wait
-    document.getElementById('empty-state').style.display='none';
-    const ea=document.getElementById('editor-area');
-    ea.style.display='flex'; ea.style.flexDirection='column';
-    document.getElementById('note-title-input').value='';
-    document.getElementById('editor-content').innerHTML='';
-    document.getElementById('tag-select').value='';
-    document.getElementById('pin-check').checked=false;
-    document.getElementById('note-date-display').textContent='Ahora';
-    return;
-  }
+  const n=notes.find(x=>x.id===id); if(!n)return;
   document.getElementById('empty-state').style.display='none';
   const ea=document.getElementById('editor-area');
-  ea.style.display='flex';ea.style.flexDirection='column';
+  ea.style.display='flex'; ea.style.flexDirection='column';
   document.getElementById('note-title-input').value=n.title;
   document.getElementById('editor-content').innerHTML=n.content;
   document.getElementById('tag-select').value=n.tag||'';
   document.getElementById('pin-check').checked=n.pinned;
   document.getElementById('note-date-display').textContent=new Date(n.created).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'});
-  updateWC();renderList();
-  if(window.innerWidth<=640)closeSidebar();
+  updateWC(); renderList();
+  if(window.innerWidth<=640) closeAllDrawers();
 }
-window.openNote=openNote;
-window._real_openNote=openNote;
 
-async function saveNote(){
+function saveNote(){
   if(!currentId)return;
-  const n=notes.find(x=>x.id===currentId);if(!n)return;
+  const n=notes.find(x=>x.id===currentId); if(!n)return;
   n.title=document.getElementById('note-title-input').value.trim();
   n.content=document.getElementById('editor-content').innerHTML;
   n.tag=document.getElementById('tag-select').value;
   n.pinned=document.getElementById('pin-check').checked;
-  await persistNote(n);
-  toast('☁️','Guardado en la nube');
+  saveNotes(); renderList();
 }
-window.saveNote=saveNote;
-window._real_saveNote=saveNote;
 
-async function newNote(){
+function newNote(){
   const n={id:uid(),title:'',content:'',tag:'',pinned:false,created:new Date().toISOString()};
-
-  // Asegura que la nota esté en el array local ANTES de abrir el editor
-  const exists = notes.findIndex(x=>x.id===n.id);
-  if(exists===-1) notes.unshift(n);
-
-  // Abre el editor inmediatamente sin esperar Firebase
+  notes.unshift(n); saveNotes();
+  // Show left panel if collapsed
+  const lp=document.getElementById('left-panel');
+  if(lp&&lp.classList.contains('collapsed')) lp.classList.remove('collapsed');
   openNote(n.id);
-  setTimeout(()=>{ const ti=document.getElementById('note-title-input'); if(ti) ti.focus(); },120);
-
-  // Luego guarda en Firebase/localStorage en segundo plano
-  await persistNote(n);
-
-  // Asegura que el panel izquierdo esté visible
-  const lp = document.getElementById('left-panel');
-  if(lp && lp.classList.contains('collapsed')){
-    lp.classList.remove('collapsed');
-  }
+  setTimeout(()=>{const t=document.getElementById('note-title-input');if(t)t.focus();},100);
 }
-window.newNote=newNote;
-window._real_newNote=newNote;
 
-function updateWC(){const t=strip(document.getElementById('editor-content').innerHTML).trim();const w=t?t.split(/\s+/).length:0;document.getElementById('word-count').textContent=w+(w===1?' palabra':' palabras');}
+function updateWC(){
+  const t=strip(document.getElementById('editor-content').innerHTML).trim();
+  const w=t?t.split(/\s+/).length:0;
+  document.getElementById('word-count').textContent=w+(w===1?' palabra':' palabras');
+}
+
 function fmt(cmd,val){document.getElementById('editor-content').focus();document.execCommand(cmd,false,val||null);updateWC();}
 function execFmt(c,v){document.getElementById('editor-content').focus();document.execCommand(c,false,v);}
 function insertCheck(){document.getElementById('editor-content').focus();document.execCommand('insertHTML',false,'<p><input type="checkbox"> </p>');}
-window.fmt=fmt;window.execFmt=execFmt;window.insertCheck=insertCheck;
-window._real_fmt=fmt;
-window._real_execFmt=execFmt;
-window._real_insertCheck=insertCheck;
 
-// ── Ctx menu ──────────────────────────────────────────────────────────────
-function showCtx(e,id){e.preventDefault();ctxTargetId=id;const n=notes.find(x=>x.id===id);document.getElementById('ctx-pin-lbl').textContent=n.pinned?'Desfijar':'Fijar nota';const m=document.getElementById('ctx-menu');m.style.display='block';m.style.left=Math.min(e.clientX,window.innerWidth-185)+'px';m.style.top=Math.min(e.clientY,window.innerHeight-130)+'px';}
+// ══════════ CTX MENU ══════════════════════════════════════════════════════
+function showCtx(e,id){
+  e.preventDefault(); ctxTargetId=id;
+  const n=notes.find(x=>x.id===id);
+  document.getElementById('ctx-pin-lbl').textContent=n.pinned?'Desfijar':'Fijar nota';
+  const m=document.getElementById('ctx-menu');
+  m.style.display='block';
+  m.style.left=Math.min(e.clientX,window.innerWidth-185)+'px';
+  m.style.top=Math.min(e.clientY,window.innerHeight-130)+'px';
+}
 function hideCtx(){document.getElementById('ctx-menu').style.display='none';}
-async function ctxPin(){const n=notes.find(x=>x.id===ctxTargetId);if(n){n.pinned=!n.pinned;await persistNote(n);toast('📌',n.pinned?'Nota fijada':'Nota desfijada');}hideCtx();}
-async function ctxDupe(){const n=notes.find(x=>x.id===ctxTargetId);if(n){const c={...n,id:uid(),title:n.title+' (copia)',pinned:false,created:new Date().toISOString()};await persistNote(c);toast('📄','Duplicada');}hideCtx();}
-async function ctxDel(){if(!confirm('¿Eliminar esta nota?')){hideCtx();return;}await removeNote(ctxTargetId);if(currentId===ctxTargetId){currentId=null;document.getElementById('editor-area').style.display='none';document.getElementById('empty-state').style.display='';}toast('🗑️','Eliminada');hideCtx();}
-window.showCtx=showCtx;window.ctxPin=ctxPin;window.ctxDupe=ctxDupe;window.ctxDel=ctxDel;
-window._real_showCtx=showCtx;
-window._real_ctxPin=ctxPin;
-window._real_ctxDupe=ctxDupe;
-window._real_ctxDel=ctxDel;
-
-// ── Sync indicator ────────────────────────────────────────────────────────
-function setSyncing(){document.getElementById('sync-label').textContent='Sincronizando…';document.querySelector('.sync-dot').style.background='#f39c12';}
-function setSynced(){document.getElementById('sync-label').textContent='Sincronizado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});document.querySelector('.sync-dot').style.background='var(--teal)';}
-function setError(){document.getElementById('sync-label').textContent='Error al guardar';document.querySelector('.sync-dot').style.background='#e74c3c';}
-
-// ── User menu ─────────────────────────────────────────────────────────────
-function toggleUserMenu(){const m=document.getElementById('user-menu');m.style.display=m.style.display==='block'?'none':'block';}
-function exportAll(){const blob=new Blob([JSON.stringify(notes,null,2)],{type:'application/json'});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'FlowNotes_backup.json'});a.click();toggleUserMenu();}
-function showGuide(){toggleUserMenu();document.getElementById('guide-overlay').classList.add('open');}
-window.toggleUserMenu=toggleUserMenu;window.exportAll=exportAll;window.showGuide=showGuide;
-window._real_toggleUserMenu=toggleUserMenu;
-window._real_exportAll=exportAll;
-window._real_showGuide=showGuide;
-
-// ── Toast ─────────────────────────────────────────────────────────────────
-let tt;
-function toast(icon,msg){document.getElementById('toast-icon').textContent=icon;document.getElementById('toast-msg').textContent=msg;const t=document.getElementById('toast');t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200);}
-
-// ── Left drawer toggle ───────────────────────────────────────────────────
-function toggleLeft(){
-  const panel = document.getElementById('left-panel');
-  const collapsed = panel.classList.toggle('collapsed');
+function ctxPin(){
+  const n=notes.find(x=>x.id===ctxTargetId);
+  if(n){n.pinned=!n.pinned;saveNotes();renderList();toast('📌',n.pinned?'Nota fijada':'Nota desfijada');}
+  hideCtx();
 }
-window.toggleLeft = toggleLeft;
-window._real_toggleLeft = toggleLeft;
-
-// ── Right drawer toggle ──────────────────────────────────────────────────
-function toggleRight(){
-  const panel = document.getElementById('right-panel');
-  const tab = document.getElementById('right-tab');
-  const collapsed = panel.classList.toggle('collapsed');
-  if(tab) tab.classList.toggle('open', !collapsed);
-  if(!collapsed) renderCalendar();
+function ctxDupe(){
+  const n=notes.find(x=>x.id===ctxTargetId);
+  if(n){const c={...n,id:uid(),title:n.title+' (copia)',pinned:false,created:new Date().toISOString()};notes.unshift(c);saveNotes();renderList();toast('📄','Duplicada');}
+  hideCtx();
 }
-window.toggleRight = toggleRight;
-window._real_toggleRight = toggleRight;
-
-// ── Right sub-tabs ───────────────────────────────────────────────────────
-function switchRTab(name){
-  document.querySelectorAll('.rtab').forEach((t,i)=>t.classList.toggle('active', (name==='calc'?i===0:i===1)));
-  document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('active'));
-  const el = document.getElementById('rpanel-'+name);
-  if(el) el.classList.add('active');
-  if(name==='rcalendar') renderCalendar();
-}
-window.switchRTab = switchRTab;
-window._real_switchRTab = switchRTab;
-
-// ── Panel switcher (kept for compatibility) ───────────────────────────────
-function switchPanel(name) {
-  if(name==='calendar'||name==='calc'){
-    const rp = document.getElementById('right-panel');
-    if(rp.classList.contains('collapsed')) toggleRight();
-    switchRTab(name==='calendar'?'rcalendar':'calc');
+function ctxDel(){
+  if(!confirm('Eliminar esta nota?')){hideCtx();return;}
+  const i=notes.findIndex(x=>x.id===ctxTargetId);
+  if(i>-1){
+    notes.splice(i,1); saveNotes();
+    if(currentId===ctxTargetId){
+      currentId=null;
+      document.getElementById('editor-area').style.display='none';
+      document.getElementById('empty-state').style.display='';
+    }
+    renderList(); toast('🗑️','Eliminada');
   }
+  hideCtx();
 }
-window.switchPanel = switchPanel;
-window._real_switchPanel=switchPanel;
 
-// ── Calendar ──────────────────────────────────────────────────────────────
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth();
-let calEvents = JSON.parse(localStorage.getItem('fn_cal_events')||'[]');
+// ══════════ SYNC INDICATOR ════════════════════════════════════════════════
+function setSynced(){
+  document.getElementById('sync-label').textContent='Guardado · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  document.querySelector('.sync-dot').style.background='var(--teal)';
+}
 
-function saveEvents() { localStorage.setItem('fn_cal_events', JSON.stringify(calEvents)); }
+// ══════════ USER MENU ═════════════════════════════════════════════════════
+function toggleUserMenu(){
+  const m=document.getElementById('user-menu');
+  m.style.display=m.style.display==='block'?'none':'block';
+}
+function exportAll(){
+  const blob=new Blob([JSON.stringify(notes,null,2)],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'FlowNotes_backup.json'});
+  a.click(); toggleUserMenu();
+}
+function importNotes(){
+  const input=document.createElement('input');
+  input.type='file'; input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const imported=JSON.parse(ev.target.result);
+        if(Array.isArray(imported)){
+          notes=[...imported,...notes.filter(n=>!imported.find(i=>i.id===n.id))];
+          saveNotes(); renderList(); toast('📥','Notas importadas');
+        }
+      }catch(e){toast('❌','Error al importar');}
+    };
+    reader.readAsText(file);
+  };
+  input.click(); toggleUserMenu();
+}
 
-function renderCalendar() {
-  const today = new Date();
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const dayNames = ['D','L','M','X','J','V','S'];
-
-  let html = `<div class="cal-header">
-    <button class="cal-nav" onclick="calNav(-1)">‹</button>
-    <span>${monthNames[calMonth]} ${calYear}</span>
-    <button class="cal-nav" onclick="calNav(1)">›</button>
-  </div><div class="cal-grid">`;
-
-  dayNames.forEach(d => html += `<div class="cal-day-name">${d}</div>`);
-
-  // empty cells before first day
-  for (let i=0; i<firstDay; i++) html += `<div class="cal-day other-month"></div>`;
-
-  for (let d=1; d<=daysInMonth; d++) {
-    const isToday = d===today.getDate() && calMonth===today.getMonth() && calYear===today.getFullYear();
-    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const hasEv = calEvents.some(e=>e.date===dateStr);
-    html += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="filterEvByDate('${dateStr}')">${d}</div>`;
+// ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
+function toggleTheme(){
+  const isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('fn_theme',isDark?'dark':'light');
+  document.getElementById('theme-btn').textContent=isDark?'☀️':'🌙';
+  toast(isDark?'🌙':'☀️',isDark?'Tema oscuro':'Tema claro');
+}
+// Aplicar tema al cargar
+(function(){
+  if(localStorage.getItem('fn_theme')==='dark'){
+    document.body.classList.add('dark');
+    document.addEventListener('DOMContentLoaded',()=>{
+      const b=document.getElementById('theme-btn');
+      if(b)b.textContent='☀️';
+    });
   }
-  html += '</div>';
-  document.getElementById('calendar-widget').innerHTML = html;
-  renderEvents();
-}
+})();
 
-function calNav(dir) { calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
-window.calNav = calNav;
-window._real_calNav=calNav;
-
-function renderEvents(filtered) {
-  const items = filtered || calEvents;
-  const el = document.getElementById('events-items');
-  if (!items.length) { el.innerHTML = '<div class="ev-empty">Sin eventos 🎉</div>'; return; }
-  const sorted = [...items].sort((a,b)=>a.date.localeCompare(b.date));
-  el.innerHTML = sorted.map((e,i) => `
-    <div class="ev-item">
-      <div style="flex:1">
-        <div class="ev-text">${e.text}</div>
-        <div class="ev-date-lbl">📅 ${formatEvDate(e.date)}</div>
-      </div>
-      <button class="ev-del" onclick="delEvent(${calEvents.indexOf(e)})">✕</button>
-    </div>`).join('');
-}
-
-function filterEvByDate(date) {
-  const filtered = calEvents.filter(e=>e.date===date);
-  renderEvents(filtered.length ? filtered : calEvents);
-}
-
-function formatEvDate(d) {
-  const dt = new Date(d+'T12:00:00');
-  return dt.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-}
-
-function addEvent() {
-  const text = document.getElementById('ev-input').value.trim();
-  const date = document.getElementById('ev-date').value;
-  if (!text || !date) { toast('⚠️','Escribe un evento y selecciona fecha'); return; }
-  calEvents.push({text, date}); saveEvents();
-  document.getElementById('ev-input').value = '';
-  document.getElementById('ev-date').value = '';
-  renderCalendar(); toast('📅','Evento agregado');
-}
-window.addEvent = addEvent;
-window._real_addEvent=addEvent;
-
-function delEvent(i) { calEvents.splice(i,1); saveEvents(); renderCalendar(); }
-window.delEvent = delEvent;
-window._real_delEvent=delEvent;
-
-// Set today's date as default for event input
-document.addEventListener('DOMContentLoaded', ()=>{
-  const today = new Date().toISOString().split('T')[0];
-  const evDate = document.getElementById('ev-date');
-  if (evDate) evDate.value = today;
-});
-
-// ── Calculator ────────────────────────────────────────────────────────────
-let calcCurrent = '0', calcPrev = '', calcOperator = '', calcNewNum = true;
-
-function calcKey(k) {
-  if (calcNewNum) { calcCurrent = k === '.' ? '0.' : k; calcNewNum = false; }
-  else {
-    if (k==='.' && calcCurrent.includes('.')) return;
-    calcCurrent = calcCurrent==='0' && k!=='.' ? k : calcCurrent+k;
-  }
-  document.getElementById('calc-result').textContent = calcCurrent;
-}
-window.calcKey = calcKey;
-window._real_calcKey=calcKey;
-
-function calcOp(op) {
-  const cur = parseFloat(calcCurrent);
-  if (op==='AC') { calcCurrent='0'; calcPrev=''; calcOperator=''; calcNewNum=true; document.getElementById('calc-expr').textContent=''; document.getElementById('calc-result').textContent='0'; return; }
-  if (op==='+/-') { calcCurrent=String(-cur); document.getElementById('calc-result').textContent=calcCurrent; return; }
-  if (op==='%') { calcCurrent=String(cur/100); document.getElementById('calc-result').textContent=calcCurrent; return; }
-  if (op==='=') {
-    if (!calcOperator) return;
-    const prev = parseFloat(calcPrev);
-    let res;
-    if (calcOperator==='÷') res = prev/cur;
-    else if (calcOperator==='×') res = prev*cur;
-    else if (calcOperator==='-') res = prev-cur;
-    else if (calcOperator==='+') res = prev+cur;
-    res = Math.round(res*1e10)/1e10;
-    document.getElementById('calc-expr').textContent = `${calcPrev} ${calcOperator} ${calcCurrent} =`;
-    calcCurrent = String(res); calcPrev=''; calcOperator=''; calcNewNum=true;
-    document.getElementById('calc-result').textContent=calcCurrent; return;
-  }
-  if (calcPrev && !calcNewNum) { calcOp('='); }
-  calcPrev = calcCurrent; calcOperator = op; calcNewNum = true;
-  document.getElementById('calc-expr').textContent = `${calcPrev} ${op}`;
-}
-window.calcOp = calcOp;
-window._real_calcOp=calcOp;
-
-// ── Mobile sidebar (now toggles notes panel) ──────────────────────────────
-function toggleSidebar(){const sb=document.getElementById('sidebar'),ov=document.getElementById('sidebar-overlay');const isOpen=sb.classList.contains('open');sb.classList.toggle('open',!isOpen);ov.style.display=isOpen?'none':'block';}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').style.display='none';}
-window.toggleSidebar=toggleSidebar;window.closeSidebar=closeSidebar;
-window._real_toggleSidebar=toggleSidebar;
-window._real_closeSidebar=closeSidebar;
-
-// ── Mobile & desktop drawer functions ───────────────────────────────────
-function isMobile(){ return window.innerWidth <= 640; }
+// ══════════ PANELES COLAPSABLES ═══════════════════════════════════════════
+function isMobile(){ return window.innerWidth<=640; }
 
 function toggleLeft(){
   if(isMobile()){
-    const ld = document.getElementById('left-drawer');
-    const ov = document.getElementById('drawer-overlay');
-    const isOpen = ld.classList.contains('mobile-open');
+    const ld=document.getElementById('left-drawer');
+    const ov=document.getElementById('drawer-overlay');
+    const isOpen=ld.classList.contains('mobile-open');
     closeAllDrawers();
-    if(!isOpen){ ld.classList.add('mobile-open'); ov.classList.add('show'); }
+    if(!isOpen){ld.classList.add('mobile-open');ov.classList.add('show');}
   } else {
-    const panel = document.getElementById('left-panel');
-    panel.classList.toggle('collapsed');
+    document.getElementById('left-panel').classList.toggle('collapsed');
   }
 }
-window.toggleLeft=toggleLeft; window._real_toggleLeft=toggleLeft;
 
 function toggleRight(){
   if(isMobile()){
-    const rd = document.getElementById('right-drawer');
-    const ov = document.getElementById('drawer-overlay');
-    const isOpen = rd.classList.contains('mobile-open');
+    const rd=document.getElementById('right-drawer');
+    const ov=document.getElementById('drawer-overlay');
+    const isOpen=rd.classList.contains('mobile-open');
     closeAllDrawers();
-    if(!isOpen){ rd.classList.add('mobile-open'); ov.classList.add('show'); renderCalendar(); }
+    if(!isOpen){rd.classList.add('mobile-open');ov.classList.add('show');renderCalendar();}
   } else {
-    const panel = document.getElementById('right-panel');
-    const tab = document.getElementById('right-tab');
-    const collapsed = panel.classList.toggle('collapsed');
-    if(tab) tab.classList.toggle('open', !collapsed);
-    if(!collapsed) renderCalendar();
+    const panel=document.getElementById('right-panel');
+    const tab=document.getElementById('right-tab');
+    const collapsed=panel.classList.toggle('collapsed');
+    if(tab)tab.classList.toggle('open',!collapsed);
+    if(!collapsed)renderCalendar();
   }
 }
-window.toggleRight=toggleRight; window._real_toggleRight=toggleRight;
-
-function toggleMobileLeft(){ toggleLeft(); }
-window.toggleMobileLeft=toggleMobileLeft; window._real_toggleMobileLeft=toggleMobileLeft;
-
-function toggleMobileRight(){ toggleRight(); }
-window.toggleMobileRight=toggleMobileRight; window._real_toggleMobileRight=toggleMobileRight;
 
 function closeAllDrawers(){
   document.getElementById('left-drawer').classList.remove('mobile-open');
   document.getElementById('right-drawer').classList.remove('mobile-open');
   document.getElementById('drawer-overlay').classList.remove('show');
 }
-window.closeAllDrawers=closeAllDrawers; window._real_closeAllDrawers=closeAllDrawers;
 
-// Override openNote to close drawers on mobile
-const _origOpenNote = openNote;
-function openNoteM(id){
-  if(isMobile()) closeAllDrawers();
-  _origOpenNote(id);
+function switchRTab(name){
+  document.querySelectorAll('.rtab').forEach((t,i)=>t.classList.toggle('active',name==='calc'?i===0:i===1));
+  document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('active'));
+  const el=document.getElementById('rpanel-'+name);
+  if(el)el.classList.add('active');
+  if(name==='rcalendar')renderCalendar();
 }
-window.openNote=openNoteM; window._real_openNote=openNoteM;
 
-// Override newNote to close drawers on mobile
-const _origNewNote = newNote;
-async function newNoteM(){
-  if(isMobile()) closeAllDrawers();
-  await _origNewNote();
+// ══════════ CALCULADORA ═══════════════════════════════════════════════════
+let calcCurrent='0', calcPrev='', calcOper='', calcNewNum=true;
+
+function calcKey(k){
+  if(calcNewNum){calcCurrent=k==='.'?'0.':k;calcNewNum=false;}
+  else{
+    if(k==='.'&&calcCurrent.includes('.'))return;
+    calcCurrent=calcCurrent==='0'&&k!=='.'?k:calcCurrent+k;
+  }
+  document.getElementById('calc-result').textContent=calcCurrent;
 }
-window.newNote=newNoteM; window._real_newNote=newNoteM;
+function calcOp(op){
+  const cur=parseFloat(calcCurrent);
+  if(op==='AC'){calcCurrent='0';calcPrev='';calcOper='';calcNewNum=true;document.getElementById('calc-expr').textContent='';document.getElementById('calc-result').textContent='0';return;}
+  if(op==='+/-'){calcCurrent=String(-cur);document.getElementById('calc-result').textContent=calcCurrent;return;}
+  if(op==='%'){calcCurrent=String(cur/100);document.getElementById('calc-result').textContent=calcCurrent;return;}
+  if(op==='='){
+    if(!calcOper)return;
+    const prev=parseFloat(calcPrev);
+    let res;
+    if(calcOper==='/')res=prev/cur;
+    else if(calcOper==='*')res=prev*cur;
+    else if(calcOper==='-')res=prev-cur;
+    else if(calcOper==='+')res=prev+cur;
+    res=Math.round(res*1e10)/1e10;
+    document.getElementById('calc-expr').textContent=calcPrev+' '+calcOper+' '+calcCurrent+' =';
+    calcCurrent=String(res);calcPrev='';calcOper='';calcNewNum=true;
+    document.getElementById('calc-result').textContent=calcCurrent;return;
+  }
+  if(calcPrev&&!calcNewNum)calcOp('=');
+  calcPrev=calcCurrent;calcOper=op;calcNewNum=true;
+  document.getElementById('calc-expr').textContent=calcPrev+' '+op;
+}
 
-// ── Events ────────────────────────────────────────────────────────────────
-document.getElementById('editor-content').addEventListener('input',updateWC);
+// ══════════ CALENDARIO ════════════════════════════════════════════════════
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+let calEvents=JSON.parse(localStorage.getItem('fn_events')||'[]');
+function saveEvents(){localStorage.setItem('fn_events',JSON.stringify(calEvents));}
+
+function renderCalendar(){
+  const today=new Date();
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const days=['D','L','M','X','J','V','S'];
+  let html=`<div class="cal-header"><button class="cal-nav" onclick="calNav(-1)">‹</button><span>${months[calMonth]} ${calYear}</span><button class="cal-nav" onclick="calNav(1)">›</button></div><div class="cal-grid">`;
+  days.forEach(d=>html+=`<div class="cal-day-name">${d}</div>`);
+  for(let i=0;i<firstDay;i++)html+=`<div class="cal-day other-month"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEv=calEvents.some(e=>e.date===ds);
+    html+=`<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="filterEvByDate('${ds}')">${d}</div>`;
+  }
+  html+='</div>';
+  document.getElementById('calendar-widget').innerHTML=html;
+  renderEvents();
+}
+function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function renderEvents(items){
+  items=items||calEvents;
+  const el=document.getElementById('events-items');
+  if(!items.length){el.innerHTML='<div class="ev-empty">Sin eventos</div>';return;}
+  el.innerHTML=[...items].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`
+    <div class="ev-item">
+      <div style="flex:1"><div class="ev-text">${e.text}</div><div class="ev-date-lbl">📅 ${new Date(e.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'})}</div></div>
+      <button class="ev-del" onclick="delEvent(${calEvents.indexOf(e)})">✕</button>
+    </div>`).join('');
+}
+function filterEvByDate(date){const f=calEvents.filter(e=>e.date===date);renderEvents(f.length?f:calEvents);}
+function addEvent(){
+  const text=document.getElementById('ev-input').value.trim();
+  const date=document.getElementById('ev-date').value;
+  if(!text||!date){toast('⚠️','Escribe un evento y fecha');return;}
+  calEvents.push({text,date});saveEvents();
+  document.getElementById('ev-input').value='';
+  renderCalendar();toast('📅','Evento agregado');
+}
+function delEvent(i){calEvents.splice(i,1);saveEvents();renderCalendar();}
+
+// ══════════ TOAST ══════════════════════════════════════════════════════════
+let tt;
+function toast(icon,msg){
+  document.getElementById('toast-icon').textContent=icon;
+  document.getElementById('toast-msg').textContent=msg;
+  const t=document.getElementById('toast');
+  t.classList.add('show');clearTimeout(tt);
+  tt=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
-['note-title-input','editor-content'].forEach(id=>{document.getElementById(id).addEventListener('input',()=>{clearTimeout(asSave);asSave=setTimeout(saveNote,1800);});});
+document.addEventListener('DOMContentLoaded',()=>{
+  loadNotes();
+  renderList();
+  // Set today date for events
+  const evDate=document.getElementById('ev-date');
+  if(evDate)evDate.value=new Date().toISOString().split('T')[0];
+  // Apply saved theme
+  if(localStorage.getItem('fn_theme')==='dark'){
+    document.getElementById('theme-btn').textContent='☀️';
+  }
+});
+
+document.getElementById('editor-content').addEventListener('input',updateWC);
+['note-title-input','editor-content'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{clearTimeout(asSave);asSave=setTimeout(saveNote,1500);});
+});
 document.getElementById('tag-select').addEventListener('change',saveNote);
 document.getElementById('pin-check').addEventListener('change',saveNote);
 document.getElementById('search-input').addEventListener('input',e=>renderList(currentFilter,e.target.value));
-document.querySelectorAll('.filter-tab').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentFilter=btn.dataset.filter;renderList(currentFilter,document.getElementById('search-input').value);});});
-document.addEventListener('click',e=>{if(!document.getElementById('ctx-menu').contains(e.target))hideCtx();if(!document.getElementById('user-menu').contains(e.target)&&!document.getElementById('user-chip').contains(e.target))document.getElementById('user-menu').style.display='none';});
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveNote();}});
-document.getElementById('auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
-document.getElementById('auth-email').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
-document.getElementById('guide-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('guide-overlay'))document.getElementById('guide-overlay').classList.remove('open');});
-
-// ── Botón "Continuar sin registrarse" ────────────────────────────────────
-document.getElementById('auth-demo-btn').addEventListener('click',()=>{
-  window._demoMode=true;
-window._real__demoMode=true;
-  currentUser={uid:'guest',email:'invitado@flownotes.app',displayName:'Invitado'};
-  const raw=localStorage.getItem('fn_guest');
-  notes=raw?JSON.parse(raw):[
-    {id:uid(),title:'Mi primera nota 📝',content:'<p>Estás usando FlowNotes como <b>invitado</b>. Tus notas se guardan en este dispositivo.</p><p>Regístrate para sincronizarlas en la nube ☁️</p>',tag:'Personal',pinned:true,created:new Date().toISOString()}
-  ];
-  enterApp(currentUser);
+document.querySelectorAll('.filter-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');currentFilter=btn.dataset.filter;
+    renderList(currentFilter,document.getElementById('search-input').value);
+  });
 });
-
-// ── Tema claro / oscuro ───────────────────────────────────────────────────
-function toggleTheme(){
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('fn_theme', isDark ? 'dark' : 'light');
-  const btn = document.getElementById('theme-btn');
-  if(btn) btn.textContent = isDark ? '☀️' : '🌙';
-  toast(isDark ? '🌙' : '☀️', isDark ? 'Tema oscuro activado' : 'Tema claro activado');
-}
-window.toggleTheme = toggleTheme;
-window._real_toggleTheme = toggleTheme;
-
-// Aplicar tema guardado al cargar — inmediatamente al arrancar
-(function(){
-  const saved = localStorage.getItem('fn_theme');
-  if(saved === 'dark'){
-    document.body.classList.add('dark');
-    document.addEventListener('DOMContentLoaded', ()=>{
-      const btn = document.getElementById('theme-btn');
-      if(btn) btn.textContent = '☀️';
-    });
-  }
-})();
-
+document.addEventListener('click',e=>{
+  if(!document.getElementById('ctx-menu').contains(e.target))hideCtx();
+  if(!document.getElementById('user-menu').contains(e.target)&&!document.getElementById('user-chip').contains(e.target))
+    document.getElementById('user-menu').style.display='none';
+});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveNote();}});
 </script>
 </body>
 </html>
