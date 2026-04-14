@@ -386,6 +386,7 @@ body.dark .gm-loading { background:#1a2e28; }
 .note-item.locked .ni-title::after { content:' 🔒'; font-size:11px; }
 /* Long press ripple */
 .note-item.pressing { background:var(--teal-l) !important; transform:scale(0.98); transition:transform 0.1s; }
+.prio-icon-btn.pressing .prio-icon-circle { transform:scale(0.9); opacity:0.7; transition:all 0.1s; }
 
 /* Voice recorder */
 #voice-card {
@@ -461,6 +462,20 @@ body.dark #panel-bottom-bar button:hover { background:#1e3530; }
   white-space:nowrap;
 }
 #fab:hover { background:var(--teal-d); }
+
+/* Alarm modal */
+#alarm-card {
+  background:var(--surface); border-radius:24px 24px 0 0;
+  width:100%; max-width:480px; padding:20px 20px 32px;
+  animation:slideUp 0.3s cubic-bezier(.16,1,.3,1);
+}
+body.dark #alarm-card { background:var(--surface); }
+body.dark #alarm-date, body.dark #alarm-time, body.dark #alarm-msg {
+  background:var(--surface); border-color:var(--border); color:var(--ink);
+}
+
+/* Note alarm badge in list */
+.ni-alarm { font-size:11px; color:var(--teal); font-weight:600; }
 
 /* sync indicator */
 #sync-bar {
@@ -585,6 +600,83 @@ body.dark #back-btn { background:var(--surface); border-color:var(--border); col
 }
 #empty-state p { font-size:15px; font-weight:500; }
 #empty-state small { font-size:13px; }
+
+/* Priority icons */
+#priority-icons-wrap {
+  width:100%; max-width:340px; display:none; flex-direction:column; align-items:flex-start; gap:8px;
+}
+#priority-icons-wrap.visible { display:flex; }
+#priority-icons-label {
+  font-size:11px; font-weight:700; color:var(--teal); letter-spacing:0.8px;
+  padding-left:4px;
+}
+#priority-icons-grid {
+  display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-start;
+  width:100%;
+}
+.prio-icon-btn {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  width:72px; cursor:pointer; transition:transform 0.15s;
+}
+.prio-icon-btn:hover { transform:scale(1.05); }
+.prio-icon-btn:active { transform:scale(0.95); }
+.prio-icon-circle {
+  width:56px; height:56px; border-radius:18px;
+  background:linear-gradient(135deg, var(--teal), var(--teal-d));
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; box-shadow:0 4px 12px rgba(0,184,148,0.35);
+  position:relative;
+}
+.prio-icon-circle .prio-star {
+  position:absolute; top:-4px; right:-4px;
+  font-size:14px; line-height:1;
+}
+.prio-icon-name {
+  font-size:10px; font-weight:700; color:var(--ink2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:72px; text-align:center;
+}
+body.dark .prio-icon-circle { background:linear-gradient(135deg,#006651,#004d3d); }
+body.dark .prio-icon-name { color:var(--ink2); }
+
+/* Save & categorize modal */
+#save-modal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.5);
+  display:none; align-items:flex-end; justify-content:center;
+  z-index:4000; backdrop-filter:blur(4px);
+}
+#save-modal.open { display:flex; }
+#save-card {
+  background:var(--surface); border-radius:24px 24px 0 0;
+  width:100%; max-width:480px; padding:20px 20px 32px;
+  animation:slideUp 0.3s cubic-bezier(.16,1,.3,1);
+}
+#save-card::before {
+  content:''; display:block; width:40px; height:4px;
+  border-radius:2px; background:var(--border); margin:0 auto 16px;
+}
+#save-card h3 { font-size:16px; font-weight:800; color:var(--ink); margin-bottom:16px; }
+.save-option {
+  display:flex; align-items:center; gap:14px;
+  padding:13px 16px; border-radius:14px;
+  background:var(--bg); border:2px solid transparent;
+  margin-bottom:8px; cursor:pointer; transition:all 0.15s;
+}
+.save-option:hover { border-color:var(--teal); background:var(--teal-l); }
+.save-option.selected { border-color:var(--teal); background:var(--teal-l); }
+.save-option-icon { font-size:24px; flex-shrink:0; }
+.save-option-text h4 { font-size:14px; font-weight:700; color:var(--ink); }
+.save-option-text p { font-size:12px; color:var(--ink3); margin-top:2px; }
+#save-confirm-btn {
+  width:100%; padding:14px; margin-top:8px;
+  background:var(--teal); color:#fff; border:none;
+  border-radius:14px; font-family:var(--font);
+  font-size:15px; font-weight:700; cursor:pointer;
+}
+#save-confirm-btn:hover { background:var(--teal-d); }
+body.dark #save-card { background:var(--surface); }
+body.dark .save-option { background:#1a2e28; }
+body.dark .save-option:hover, body.dark .save-option.selected { background:#0d2e26; }
 
 /* ══════════ CTX MENU ══════════ */
 /* Bottom sheet overlay for ctx menu */
@@ -1057,16 +1149,23 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
         <div style="display:flex;gap:8px;align-items:center;">
           <button id="print-note-btn" onclick="printCurrentNote()" title="Imprimir">🖨️</button>
           <button id="back-btn" onclick="goBack()" title="Volver a notas">← Notas</button>
-          <button id="save-btn" onclick="saveNote()">💾 Guardar</button>
+          <button id="save-btn" onclick="openSaveModal()">💾 Guardar</button>
         </div>
       </div>
     </div>
 
     <!-- ══ EMPTY STATE ══ -->
-    <div id="empty-state" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink3);gap:14px;background:var(--bg)">
-      <div class="es-icon-wrap">📒</div>
-      <p>Selecciona o crea una nota</p>
-      <button onclick="newNote()" style="margin-top:8px;background:var(--teal);color:#fff;border:none;border-radius:20px;padding:10px 24px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;box-shadow:none;">✏️ Nueva nota</button>
+    <div id="empty-state" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;color:var(--ink3);gap:14px;background:var(--bg);text-align:center;padding:20px 20px 20px">
+      <!-- Notas prioritarias como iconos -->
+      <div id="priority-icons-wrap">
+        <div id="priority-icons-label">⭐ Prioritarias</div>
+        <div id="priority-icons-grid"></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;width:100%">
+        <div class="es-icon-wrap">📒</div>
+        <p>Selecciona o crea una nota</p>
+        <button onclick="newNote()" style="margin-top:8px;background:var(--teal);color:#fff;border:none;border-radius:20px;padding:10px 24px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;box-shadow:none;">✏️ Nueva nota</button>
+      </div>
     </div>
 
     <!-- ══ OVERLAY ══ -->
@@ -1166,6 +1265,51 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 </div>
 
 <!-- user-menu moved to settings -->
+
+<!-- SAVE & CATEGORIZE MODAL -->
+<div id="save-modal">
+  <div id="save-card">
+    <h3>Guardar nota</h3>
+    <div class="save-option" id="opt-normal" onclick="selectSaveOpt('normal')">
+      <span class="save-option-icon">📝</span>
+      <div class="save-option-text">
+        <h4>Nota normal</h4>
+        <p>Se guarda en tu lista de notas</p>
+      </div>
+    </div>
+    <div class="save-option" id="opt-priority" onclick="selectSaveOpt('priority')">
+      <span class="save-option-icon">⭐</span>
+      <div class="save-option-text">
+        <h4>Nota prioritaria</h4>
+        <p>Aparece como icono en la pantalla principal</p>
+      </div>
+    </div>
+    <button id="save-confirm-btn" onclick="confirmSave()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ALARM MODAL -->
+<div id="alarm-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center;z-index:4000;backdrop-filter:blur(4px)">
+  <div id="alarm-card">
+    <div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">🔔 Recordatorio</h3>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:16px" id="alarm-note-name">Para: sin titulo</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Fecha</label>
+      <input type="date" id="alarm-date" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
+      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Hora</label>
+      <input type="time" id="alarm-time" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
+      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Mensaje (opcional)</label>
+      <input type="text" id="alarm-msg" placeholder="Ej: Revisar esta nota" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
+    </div>
+    <div id="alarm-existing" style="display:none;background:var(--teal-l);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--teal-d)"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeAlarmModal()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font-family:var(--font);font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer">Cancelar</button>
+      <button id="alarm-remove-btn" onclick="removeAlarm()" style="display:none;flex:1;padding:12px;border:none;border-radius:12px;background:#ffeaea;font-family:var(--font);font-size:14px;font-weight:600;color:#c62828;cursor:pointer">🗑️ Quitar</button>
+      <button onclick="saveAlarm()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--teal);font-family:var(--font);font-size:14px;font-weight:700;color:#fff;cursor:pointer">✅ Guardar</button>
+    </div>
+  </div>
+</div>
 
 <!-- EXPORT MODAL -->
 <div id="export-modal">
@@ -1351,6 +1495,8 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 <div id="ctx-menu">
   <div id="ctx-note-label"></div>
   <button onclick="ctxPin()">📌 <span id="ctx-pin-lbl">Fijar nota</span></button>
+  <button onclick="ctxTogglePriority()">⭐ <span id="ctx-priority-lbl">Marcar prioritaria</span></button>
+  <button onclick="ctxSetAlarm()">🔔 Agregar recordatorio</button>
   <button onclick="ctxLockNote()">🔒 <span id="ctx-lock-lbl">Bloquear con PIN</span></button>
   <button onclick="ctxPrint()">🖨️ Imprimir nota</button>
   <button onclick="ctxDupe()">📄 Duplicar</button>
@@ -1444,6 +1590,7 @@ function renderList(filter, q){
       <div class="ni-preview">${esc(strip(n.content)).slice(0,65)||'Nota vacia'}</div>
       <div class="ni-meta">
         <span class="ni-date">${fmtDate(n.created)}</span>
+        ${n.alarm ? '<span class="ni-alarm">🔔 ' + new Date(n.alarm.datetime).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}) + '</span>' : ''}
         ${n.tag?`<span class="ni-tag tag-${n.tag.toLowerCase()}">${n.tag}</span>`:''}
       </div>
     </div>`).join('');
@@ -1489,6 +1636,7 @@ function goBack(){
   document.getElementById('editor-area').style.display = 'none';
   document.getElementById('empty-state').style.display = '';
   closeAllDrawers();
+  renderPriorityIcons();
 }
 
 function saveNote(silent){
@@ -1505,6 +1653,7 @@ function saveNote(silent){
     document.getElementById('editor-area').style.display='none';
     document.getElementById('empty-state').style.display='';
     closeAllDrawers();
+    renderPriorityIcons();
     toast('💾','Nota guardada');
   }
 }
@@ -1734,7 +1883,9 @@ let longPressTimer = null;
 
 function startLongPress(id){
   cancelLongPress();
-  const el = document.querySelector('[data-id="'+id+'"]');
+  // Find element — could be note-item (has data-id) or prio-icon-btn
+  const el = document.querySelector('[data-id="'+id+'"]') ||
+             document.querySelector('.prio-icon-btn[data-prio-id="'+id+'"]');
   if(el) el.classList.add('pressing');
   longPressTimer = setTimeout(()=>{
     if(el) el.classList.remove('pressing');
@@ -1744,25 +1895,34 @@ function startLongPress(id){
 
 function cancelLongPress(){
   clearTimeout(longPressTimer);
-  document.querySelectorAll('.note-item.pressing').forEach(el=>el.classList.remove('pressing'));
+  document.querySelectorAll('.pressing').forEach(el=>el.classList.remove('pressing'));
 }
 
 function showCtxFromLongPress(id){
-  // Show context menu centered on mobile
-  const el = document.querySelector('[data-id="'+id+'"]');
-  if(!el) return;
+  // Find element — note-item or prio-icon-btn
+  const el = document.querySelector('[data-id="'+id+'"]') ||
+             document.querySelector('.prio-icon-btn[data-prio-id="'+id+'"]');
+  if(!el) {
+    // Fallback: show in center of screen
+    const fakeEvent = { preventDefault:()=>{}, clientX: window.innerWidth/2, clientY: window.innerHeight/2 };
+    showCtx(fakeEvent, id);
+    return;
+  }
   const rect = el.getBoundingClientRect();
   const fakeEvent = { preventDefault:()=>{}, clientX: rect.left + rect.width/2, clientY: rect.top + rect.height/2 };
   showCtx(fakeEvent, id);
 }
 
 function noteClick(e, id){
-  // If long press already showed menu, ignore
-  if(document.getElementById('ctx-menu').style.display === 'block') return;
+  // Ignore if long press menu is showing
+  if(document.getElementById('ctx-menu').classList.contains('open')) return;
+  // Ignore if this was triggered by a long press
+  if(longPressTimer === null && e && e.type === 'click') {
+    // it's a normal click after long press was cancelled — still allow
+  }
   const n = notes.find(x=>x.id===id);
   if(!n) return;
   if(n.pin){
-    // Note is locked — ask for PIN first
     notePinTarget = id;
     notePinMode = 'unlock';
     openNotePinModal('🔓','Desbloquear nota','Ingresa el PIN para abrir esta nota','Abrir');
@@ -1861,6 +2021,9 @@ function showCtx(e,id){
   document.getElementById('ctx-pin-lbl').textContent=n.pinned?'Desfijar':'Fijar nota';
   const lockLbl = document.getElementById('ctx-lock-lbl');
   if(lockLbl) lockLbl.textContent = n.pin ? 'Quitar bloqueo PIN' : 'Bloquear con PIN';
+  const prioLbl = document.getElementById('ctx-priority-lbl');
+  if(prioLbl) prioLbl.textContent = n.pinned ? 'Quitar de prioritarias' : 'Marcar prioritaria';
+
   // Show note title
   const lbl = document.getElementById('ctx-note-label');
   if(lbl) lbl.textContent = n.title || 'Sin titulo';
@@ -1897,13 +2060,13 @@ function ctxDupe(){
   hideCtx();
 }
 function ctxDel(){
-  // Check if it's already in trash
   if(currentFilter==='trash'){
     if(!confirm('Eliminar permanentemente?')){hideCtx();return;}
     const i=trashedNotes.findIndex(x=>x.id===ctxTargetId);
-    if(i>-1){trashedNotes.splice(i,1);saveTrash();renderList();toast('🗑️','Eliminada permanentemente');}
+    if(i>-1){trashedNotes.splice(i,1);saveTrash();renderList();renderPriorityIcons();toast('🗑️','Eliminada permanentemente');}
   } else {
     moveToTrash(ctxTargetId);
+    renderPriorityIcons();
   }
   hideCtx();
 }
@@ -1932,7 +2095,7 @@ function moveToTrash(id){
       document.getElementById('editor-area').style.display='none';
       document.getElementById('empty-state').style.display='';
     }
-    renderList(); toast('🗑️','Nota movida a la papelera');
+    renderList(); renderPriorityIcons(); toast('🗑️','Nota movida a la papelera');
   }
 }
 
@@ -2594,11 +2757,319 @@ function toast(icon,msg){
   tt=setTimeout(()=>t.classList.remove('show'),2200);
 }
 
+// ══════════ HOME SCREEN ══════════════════════════════════════════════════
+function renderHome(){
+  const emptyState = document.getElementById('empty-state');
+  if(!emptyState || emptyState.style.display === 'none') return;
+
+  // Daily note banner
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  const dateEl = document.getElementById('daily-note-date');
+  if(dateEl) dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+  const todayKey = today.toISOString().split('T')[0];
+  const dailyNote = notes.find(n=>n.dailyDate===todayKey);
+  const prevEl = document.getElementById('daily-note-preview');
+  if(prevEl) prevEl.textContent = dailyNote
+    ? (strip(dailyNote.content).slice(0,60) || 'Nota creada — toca para abrir')
+    : 'Toca para crear tu nota de hoy';
+
+  // Priority notes (pinned)
+  const pinned = notes.filter(n=>n.pinned && !n.trashedAt).slice(0,5);
+  const pList = document.getElementById('priority-list');
+  if(pList){
+    if(!pinned.length){
+      pList.innerHTML = '<div class="home-empty">Sin notas prioritarias. Fija una nota para verla aquí.</div>';
+    } else {
+      pList.innerHTML = pinned.map(n=>`
+        <div class="home-note-card" onclick="noteClick(null,'${n.id}')">
+          <div class="hnc-icon">${n.tag==='Personal'?'🏠':n.tag==='Trabajo'?'💼':n.tag==='Ideas'?'💡':n.tag==='Listas'?'📋':'⭐'}</div>
+          <div class="hnc-body">
+            <div class="hnc-title">${esc(n.title)||'Sin titulo'}</div>
+            <div class="hnc-preview">${esc(strip(n.content)).slice(0,50)||'Nota vacia'}</div>
+          </div>
+          <div class="hnc-date">${fmtDate(n.created)}</div>
+        </div>`).join('');
+    }
+  }
+
+  // Recent notes (last 5 non-pinned)
+  const recent = notes.filter(n=>!n.pinned && !n.trashedAt)
+    .sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,5);
+  const rList = document.getElementById('recent-list');
+  if(rList){
+    if(!recent.length){
+      rList.innerHTML = '<div class="home-empty">Crea tu primera nota.</div>';
+    } else {
+      rList.innerHTML = recent.map(n=>`
+        <div class="home-note-card" onclick="noteClick(null,'${n.id}')">
+          <div class="hnc-icon">${n.tag==='Personal'?'🏠':n.tag==='Trabajo'?'💼':n.tag==='Ideas'?'💡':n.tag==='Listas'?'📋':'📝'}</div>
+          <div class="hnc-body">
+            <div class="hnc-title">${esc(n.title)||'Sin titulo'}</div>
+            <div class="hnc-preview">${esc(strip(n.content)).slice(0,50)||'Nota vacia'}</div>
+          </div>
+          <div class="hnc-date">${fmtDate(n.created)}</div>
+        </div>`).join('');
+    }
+  }
+}
+
+function openDailyNote(){
+  const todayKey = new Date().toISOString().split('T')[0];
+  let daily = notes.find(n=>n.dailyDate===todayKey);
+  if(!daily){
+    const today = new Date();
+    const label = today.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+    daily = {
+      id:uid(),
+      title:'📅 ' + label.charAt(0).toUpperCase()+label.slice(1),
+      content:'',
+      tag:'Personal',
+      pinned:false,
+      dailyDate:todayKey,
+      created:new Date().toISOString()
+    };
+    notes.unshift(daily);
+    saveNotes();
+  }
+  openNote(daily.id);
+}
+
+function openPriorityNotes(){
+  // Switch to pinned filter in left panel and open it
+  currentFilter='pinned';
+  document.querySelectorAll('.filter-tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.filter==='pinned');
+  });
+  renderList('pinned');
+  if(window.innerWidth<=640) toggleLeft();
+}
+
+function openLeftPanel(){
+  currentFilter='all';
+  document.querySelectorAll('.filter-tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.filter==='all');
+  });
+  renderList('all');
+  if(window.innerWidth<=640) toggleLeft();
+}
+
+// ══════════ GUARDAR CON CATEGORÍA ═════════════════════════════════════════
+let selectedSaveOpt = 'normal';
+
+function openSaveModal(){
+  if(!currentId) return;
+  const n = notes.find(x=>x.id===currentId);
+  if(!n) return;
+  // Pre-select based on current state
+  selectedSaveOpt = n.pinned ? 'priority' : 'normal';
+  document.querySelectorAll('.save-option').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('opt-'+selectedSaveOpt).classList.add('selected');
+  document.getElementById('save-modal').classList.add('open');
+}
+
+function selectSaveOpt(opt){
+  selectedSaveOpt = opt;
+  document.querySelectorAll('.save-option').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('opt-'+opt).classList.add('selected');
+}
+
+function confirmSave(){
+  document.getElementById('save-modal').classList.remove('open');
+  const n = notes.find(x=>x.id===currentId);
+  if(n) n.pinned = (selectedSaveOpt === 'priority');
+  // Save silently first (to persist pinned state)
+  if(currentId){
+    const note = notes.find(x=>x.id===currentId);
+    if(note){
+      note.title = document.getElementById('note-title-input').value.trim();
+      note.content = document.getElementById('editor-content').innerHTML;
+      note.tag = document.getElementById('tag-select').value;
+      note.pinned = (selectedSaveOpt === 'priority');
+      saveNotes();
+    }
+  }
+  // Now go back and render icons
+  currentId = null;
+  document.getElementById('editor-area').style.display = 'none';
+  document.getElementById('empty-state').style.display = '';
+  closeAllDrawers();
+  renderList();
+  renderPriorityIcons();
+  toast('💾', selectedSaveOpt === 'priority' ? '⭐ Guardada como prioritaria' : 'Nota guardada');
+}
+
+function renderPriorityIcons(){
+  const pinned = notes.filter(n=>n.pinned && !n.trashedAt);
+  const wrap = document.getElementById('priority-icons-wrap');
+  const grid = document.getElementById('priority-icons-grid');
+  if(!wrap || !grid) return;
+  if(!pinned.length){
+    wrap.classList.remove('visible');
+    return;
+  }
+  wrap.classList.add('visible');
+  const tagEmoji = {Personal:'🏠',Trabajo:'💼',Ideas:'💡',Listas:'📋'};
+  grid.innerHTML = pinned.map(n=>`
+    <div class="prio-icon-btn"
+      data-prio-id="${n.id}"
+      onclick="noteClick(event,'${n.id}')"
+      ontouchstart="startLongPress('${n.id}')"
+      ontouchend="cancelLongPress()"
+      ontouchmove="cancelLongPress()"
+      onmousedown="startLongPress('${n.id}')"
+      onmouseup="cancelLongPress()"
+      onmouseleave="cancelLongPress()"
+      oncontextmenu="showCtx(event,'${n.id}')">
+      <div class="prio-icon-circle">
+        <span>${tagEmoji[n.tag]||'📝'}</span>
+        <span class="prio-star">⭐</span>
+      </div>
+      <div class="prio-icon-name">${esc(n.title)||'Sin titulo'}</div>
+    </div>`).join('');
+}
+
+// ══════════ RECORDATORIOS / ALARMAS ══════════════════════════════════════
+let alarmCheckInterval = null;
+let alarmTargetId = null;
+
+function ctxSetAlarm(){
+  hideCtx();
+  alarmTargetId = ctxTargetId;
+  openAlarmModal(ctxTargetId);
+}
+
+function openAlarmModal(id){
+  alarmTargetId = id;
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+
+  // Set note name
+  const nameEl = document.getElementById('alarm-note-name');
+  if(nameEl) nameEl.textContent = 'Para: ' + (n.title || 'Sin titulo');
+
+  // Pre-fill if alarm exists
+  const existingEl = document.getElementById('alarm-existing');
+  const removeBtn = document.getElementById('alarm-remove-btn');
+  if(n.alarm){
+    const d = new Date(n.alarm.datetime);
+    document.getElementById('alarm-date').value = d.toISOString().split('T')[0];
+    document.getElementById('alarm-time').value = d.toTimeString().slice(0,5);
+    document.getElementById('alarm-msg').value = n.alarm.msg || '';
+    if(existingEl){ existingEl.style.display='block'; existingEl.textContent = '🔔 Recordatorio activo: ' + d.toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}); }
+    if(removeBtn) removeBtn.style.display='block';
+  } else {
+    // Default: today + 1 hour
+    const now = new Date();
+    now.setHours(now.getHours()+1, 0, 0, 0);
+    document.getElementById('alarm-date').value = now.toISOString().split('T')[0];
+    document.getElementById('alarm-time').value = now.toTimeString().slice(0,5);
+    document.getElementById('alarm-msg').value = '';
+    if(existingEl) existingEl.style.display='none';
+    if(removeBtn) removeBtn.style.display='none';
+  }
+
+  document.getElementById('alarm-modal').style.display = 'flex';
+}
+
+function closeAlarmModal(){
+  document.getElementById('alarm-modal').style.display = 'none';
+  alarmTargetId = null;
+}
+
+function saveAlarm(){
+  const dateVal = document.getElementById('alarm-date').value;
+  const timeVal = document.getElementById('alarm-time').value;
+  const msg = document.getElementById('alarm-msg').value.trim();
+
+  if(!dateVal || !timeVal){ toast('❌','Elige fecha y hora'); return; }
+
+  const datetime = new Date(dateVal + 'T' + timeVal);
+  if(datetime <= new Date()){ toast('❌','La fecha debe ser en el futuro'); return; }
+
+  const n = notes.find(x=>x.id===alarmTargetId);
+  if(!n){ closeAlarmModal(); return; }
+
+  n.alarm = { datetime: datetime.toISOString(), msg: msg || n.title || 'Recordatorio' };
+  saveNotes(); renderList();
+  closeAlarmModal();
+
+  // Request notification permission
+  if('Notification' in window){
+    Notification.requestPermission().then(perm=>{
+      if(perm === 'granted'){
+        scheduleAlarmCheck();
+        toast('🔔','Recordatorio guardado para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
+      } else {
+        toast('⚠️','Activa notificaciones para recibir el recordatorio');
+      }
+    });
+  } else {
+    toast('🔔','Recordatorio guardado (notificaciones no disponibles en este navegador)');
+  }
+}
+
+function removeAlarm(){
+  const n = notes.find(x=>x.id===alarmTargetId);
+  if(n){ delete n.alarm; saveNotes(); renderList(); }
+  closeAlarmModal();
+  toast('🔕','Recordatorio eliminado');
+}
+
+function scheduleAlarmCheck(){
+  if(alarmCheckInterval) return;
+  alarmCheckInterval = setInterval(checkAlarms, 30000); // check every 30s
+  checkAlarms(); // check immediately
+}
+
+function checkAlarms(){
+  const now = new Date();
+  notes.forEach(n=>{
+    if(!n.alarm) return;
+    const alarmTime = new Date(n.alarm.datetime);
+    const diff = alarmTime - now;
+    // Fire if within the last 30 seconds window
+    if(diff >= -30000 && diff <= 30000){
+      if(Notification.permission === 'granted'){
+        const notif = new Notification('🔔 FlowNotes', {
+          body: n.alarm.msg || n.title || 'Tienes un recordatorio',
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">📝</text></svg>'
+        });
+        notif.onclick = ()=>{ window.focus(); openNote(n.id); };
+      } else {
+        toast('🔔', n.alarm.msg || n.title || 'Recordatorio');
+      }
+      // Remove alarm after firing
+      delete n.alarm;
+      saveNotes(); renderList();
+    }
+  });
+}
+
+function ctxTogglePriority(){
+  hideCtx();
+  const n = notes.find(x=>x.id===ctxTargetId);
+  if(!n) return;
+  n.pinned = !n.pinned;
+  saveNotes(); renderList(); renderPriorityIcons();
+  toast('⭐', n.pinned ? 'Marcada como prioritaria' : 'Quitada de prioritarias');
+}
+
+// Start alarm checker if there are any alarms saved
+document.addEventListener('DOMContentLoaded', ()=>{
+  const hasAlarms = notes && notes.some(n=>n.alarm);
+  if(hasAlarms && 'Notification' in window && Notification.permission === 'granted'){
+    scheduleAlarmCheck();
+  }
+});
+
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
   loadNotes();
   renderList();
+  renderPriorityIcons();
   // Set today date for events
   const evDate=document.getElementById('ev-date');
   if(evDate)evDate.value=new Date().toISOString().split('T')[0];
@@ -2611,6 +3082,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(voiceModal){
     voiceModal.addEventListener('click', e=>{
       if(e.target === voiceModal) cancelVoice();
+    });
+  }
+  // Alarm modal overlay close
+  const alarmModal = document.getElementById('alarm-modal');
+  if(alarmModal){
+    alarmModal.addEventListener('click', e=>{
+      if(e.target===alarmModal) closeAlarmModal();
+    });
+    // Start alarm checker if needed
+    if(notes.some(n=>n.alarm) && 'Notification' in window && Notification.permission==='granted'){
+      scheduleAlarmCheck();
+    }
+  }
+  // Save modal overlay close
+  const saveModal = document.getElementById('save-modal');
+  if(saveModal){
+    saveModal.addEventListener('click', e=>{
+      if(e.target===saveModal) saveModal.classList.remove('open');
     });
   }
   // PIN modal overlay close
