@@ -1217,7 +1217,8 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
               <button class="ck fn" onclick="calcOp('+')">+</button>
               <button class="ck wide" onclick="calcKey('0')">0</button>
               <button class="ck" onclick="calcKey('.')">.</button>
-              <button class="ck eq" onclick="calcOp('=')">=</button>
+              <button class="ck op" onclick="calcBackspace()">⌫</button>
+              <button class="ck eq wide" onclick="calcOp('=')">=</button>
             </div>
           </div>
         </div>
@@ -1676,7 +1677,10 @@ function updateWC(){
 
 function fmt(cmd,val){document.getElementById('editor-content').focus();document.execCommand(cmd,false,val||null);updateWC();}
 function execFmt(c,v){document.getElementById('editor-content').focus();document.execCommand(c,false,v);}
-function insertCheck(){document.getElementById('editor-content').focus();document.execCommand('insertHTML',false,'<p><input type="checkbox"> </p>');}
+function insertCheck(){
+  document.getElementById('editor-content').focus();
+  document.execCommand('insertHTML',false,'<p><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onchange="saveNote(true)"> <span></span></label></p>');
+}
 
 // ══════════ NOTA DE VOZ ══════════════════════════════════════════════════
 let mediaRecorder = null;
@@ -2481,6 +2485,16 @@ function calcKey(k){
   }
   document.getElementById('calc-result').textContent=calcCurrent;
 }
+function calcBackspace(){
+  if(calcNewNum) return;
+  if(calcCurrent.length <= 1){
+    calcCurrent = '0'; calcNewNum = true;
+  } else {
+    calcCurrent = calcCurrent.slice(0, -1);
+  }
+  document.getElementById('calc-result').textContent = calcCurrent;
+}
+
 function calcOp(op){
   const cur=parseFloat(calcCurrent);
   if(op==='AC'){calcCurrent='0';calcPrev='';calcOper='';calcNewNum=true;document.getElementById('calc-expr').textContent='';document.getElementById('calc-result').textContent='0';return;}
@@ -2995,19 +3009,64 @@ function saveAlarm(){
   saveNotes(); renderList();
   closeAlarmModal();
 
-  // Request notification permission
-  if('Notification' in window){
-    Notification.requestPermission().then(perm=>{
-      if(perm === 'granted'){
-        scheduleAlarmCheck();
+  // Schedule alarm using setTimeout (works in all browsers without permissions)
+  const msUntil = datetime - new Date();
+  if(msUntil > 0 && msUntil < 24 * 60 * 60 * 1000){ // within 24 hours
+    setTimeout(()=>{
+      const note = notes.find(x=>x.id===n.id);
+      if(!note || !note.alarm) return; // was removed
+      // Show in-app alert
+      showAlarmAlert(note);
+      delete note.alarm;
+      saveNotes(); renderList(); renderPriorityIcons();
+    }, msUntil);
+    toast('🔔','Recordatorio para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
+  } else if(msUntil >= 24 * 60 * 60 * 1000){
+    // More than 24h — try native notification
+    if('Notification' in window && Notification.permission === 'granted'){
+      scheduleAlarmCheck();
+      toast('🔔','Recordatorio guardado para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
+    } else if('Notification' in window){
+      Notification.requestPermission().then(perm=>{
+        if(perm==='granted') scheduleAlarmCheck();
         toast('🔔','Recordatorio guardado para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
-      } else {
-        toast('⚠️','Activa notificaciones para recibir el recordatorio');
-      }
-    });
-  } else {
-    toast('🔔','Recordatorio guardado (notificaciones no disponibles en este navegador)');
+      });
+    } else {
+      toast('🔔','Recordatorio guardado (manten la app abierta para recibir la alerta)');
+      scheduleAlarmCheck();
+    }
   }
+}
+
+// Show in-app alarm alert
+function showAlarmAlert(n){
+  // Create a visible alert modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Cerrar';
+  closeBtn.style.cssText = 'flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;color:var(--ink2)';
+  closeBtn.onclick = ()=>overlay.remove();
+
+  const openBtn = document.createElement('button');
+  openBtn.textContent = 'Ver nota';
+  openBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--teal);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;color:#fff';
+  openBtn.onclick = ()=>{ openNote(n.id); overlay.remove(); };
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px';
+  btnRow.appendChild(closeBtn); btnRow.appendChild(openBtn);
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface);border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center';
+  card.innerHTML = '<div style="font-size:48px;margin-bottom:12px">🔔</div>' +
+    '<h3 style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px">Recordatorio</h3>' +
+    '<p style="font-size:15px;color:var(--ink2);margin-bottom:20px">' + esc(n.alarm.msg||n.title||'Tienes un recordatorio') + '</p>';
+  card.appendChild(btnRow);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  // Vibrate if available
+  if(navigator.vibrate) navigator.vibrate([300,100,300]);
 }
 
 function removeAlarm(){
@@ -3126,6 +3185,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.getElementById('editor-content').addEventListener('input',updateWC);
+// Save checkbox state when clicked in editor
+document.getElementById('editor-content').addEventListener('click', e=>{
+  if(e.target && e.target.type === 'checkbox'){
+    clearTimeout(asSave);
+    asSave = setTimeout(()=>saveNote(true), 300);
+  }
+});
+
 ['note-title-input','editor-content'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     clearTimeout(asSave);
