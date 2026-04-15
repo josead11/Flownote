@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FlowNotes</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --teal: #00b894;
@@ -132,6 +136,47 @@ body.dark #panel-search-wrap { background:var(--surface); border-color:var(--bor
 body.dark #panel-search-wrap input { color:var(--ink); }
 
 .topbar-spacer { flex:1; }
+
+/* ══════════ AUTH SCREEN ══════════ */
+#auth-screen {
+  position:fixed; inset:0; z-index:10000;
+  background:linear-gradient(145deg, #0d1b17 0%, #0a2e26 60%, #00836b 100%);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+}
+#auth-screen.hidden { display:none; }
+.auth-wrap {
+  width:100%; max-width:400px;
+  background:rgba(255,255,255,0.07);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:24px; padding:32px 28px;
+  animation:cardIn 0.5s cubic-bezier(.16,1,.3,1);
+}
+.auth-logo-wrap { display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:6px; }
+.auth-logo-icon { width:42px; height:42px; background:var(--teal); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+.auth-logo-name { font-size:24px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
+.auth-logo-name span { color:var(--teal); }
+.auth-tagline { text-align:center; font-size:13px; color:rgba(255,255,255,0.45); margin-bottom:24px; }
+.auth-tabs { display:flex; background:rgba(255,255,255,0.08); border-radius:10px; padding:4px; margin-bottom:20px; }
+.auth-tab { flex:1; padding:9px; border:none; background:none; cursor:pointer; font-family:var(--font); font-size:14px; font-weight:600; color:rgba(255,255,255,0.45); border-radius:8px; transition:all 0.2s; }
+.auth-tab.active { background:var(--teal); color:#fff; }
+.auth-field { margin-bottom:14px; }
+.auth-field label { display:block; font-size:11px; font-weight:700; color:rgba(255,255,255,0.55); margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase; }
+.auth-field input { width:100%; padding:12px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-family:var(--font); font-size:14px; outline:none; transition:border 0.2s; box-sizing:border-box; }
+.auth-field input::placeholder { color:rgba(255,255,255,0.3); }
+.auth-field input:focus { border-color:var(--teal); background:rgba(0,184,148,0.1); }
+#auth-err { color:#ff6b6b; font-size:12px; text-align:center; min-height:16px; margin-bottom:8px; }
+.auth-submit { width:100%; padding:14px; background:var(--teal); border:none; border-radius:12px; color:#fff; font-family:var(--font); font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 16px rgba(0,184,148,0.4); }
+.auth-submit:hover { background:var(--teal-d); }
+.auth-submit:disabled { opacity:0.6; cursor:not-allowed; }
+.auth-divider { display:flex; align-items:center; gap:10px; margin:16px 0; color:rgba(255,255,255,0.25); font-size:12px; }
+.auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.12); }
+.auth-google-btn { width:100%; padding:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; color:#fff; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s; }
+.auth-google-btn:hover { background:rgba(255,255,255,0.14); }
+#sync-status { position:fixed; top:56px; left:0; right:0; background:var(--teal); color:#fff; font-size:12px; font-weight:600; text-align:center; padding:4px; z-index:500; transform:translateY(-100%); transition:transform 0.3s; }
+#sync-status.show { transform:translateY(0); }
+#user-avatar-btn { width:32px; height:32px; border-radius:50%; background:var(--teal); color:#fff; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
 #topbar {
   height:56px; background:var(--surface);
@@ -1060,6 +1105,40 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 <body>
 
 <!-- ══════════ APP ══════════ -->
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo-icon">📝</div>
+      <div class="auth-logo-name">Flow<span>Notes</span></div>
+    </div>
+    <p class="auth-tagline">Tus notas, en cualquier lugar</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+
+    <div id="auth-form">
+      <div class="auth-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="auth-email" placeholder="tu@correo.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-pass" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+      </div>
+      <div class="auth-field" id="auth-pass2-wrap" style="display:none">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="auth-pass2" placeholder="Repite tu contraseña">
+      </div>
+      <div id="auth-err"></div>
+      <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Iniciar sesión</button>
+      <div id="auth-forgot" onclick="forgotPassword()" style="text-align:center;margin-top:12px;font-size:13px;color:var(--teal);cursor:pointer">¿Olvidaste tu contraseña?</div>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- TOP BAR -->
@@ -1071,10 +1150,12 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
     <div style="display:flex;align-items:center;gap:2px;margin-left:8px;">
       <button class="tb-btn" id="theme-btn" title="Tema" onclick="toggleTheme()">🌙</button>
       <button class="tb-btn" title="Configuración" onclick="openSettings()">⚙️</button>
+      <button id="user-avatar-btn" title="Mi cuenta" onclick="showUserMenu()">👤</button>
     </div>
     <div class="topbar-spacer"></div>
   </div>
 
+  <div id="sync-status">☁️ Sincronizando...</div>
   <div id="main-layout">
 
     <!-- ══ LEFT DRAWER: notas ══ -->
@@ -1527,8 +1608,255 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 <div id="toast"><span id="toast-icon"></span><span id="toast-msg"></span></div>
 
 <script>
+// ══════════ FIREBASE INIT ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAN5Icn1p2GPDgcNxBGEi-8YKzvFB-zp9U",
+  authDomain: "flownote-a64ed.firebaseapp.com",
+  projectId: "flownote-a64ed",
+  storageBucket: "flownote-a64ed.firebasestorage.app",
+  messagingSenderId: "636232931135",
+  appId: "1:636232931135:web:f3aa10f539444a5a43e58a"
+};
+let auth = null, db = null;
+try {
+  if(typeof firebase !== 'undefined'){
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+  }
+} catch(e){ console.warn('Firebase no disponible:', e); }
+
 // ══════════ STORAGE ══════════════════════════════════════════════════════
 const STORAGE_KEY = 'flownotes_data';
+
+// ══════════ FIREBASE AUTH & SYNC ══════════════════════════════════════════
+let currentUser = null;
+let authMode = 'login'; // 'login' | 'register'
+let syncTimeout = null;
+
+// Auth state observer — only runs if Firebase loaded
+if(auth){
+  auth.onAuthStateChanged(user => {
+    if(user){
+      currentUser = user;
+      const btn = document.getElementById('user-avatar-btn');
+      if(btn) btn.textContent = user.email.charAt(0).toUpperCase();
+      document.getElementById('auth-screen').classList.add('hidden');
+      loadNotesFromCloud();
+    } else {
+      currentUser = null;
+      document.getElementById('auth-screen').classList.remove('hidden');
+      const btn = document.getElementById('user-avatar-btn');
+      if(btn) btn.textContent = '👤';
+    }
+  });
+}
+
+function switchAuthTab(mode){
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+mode).classList.add('active');
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
+  document.getElementById('auth-pass2-wrap').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-forgot').style.display = mode === 'login' ? 'block' : 'none';
+  document.getElementById('auth-err').textContent = '';
+}
+
+async function submitAuth(){
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-err');
+  const btn = document.getElementById('auth-submit-btn');
+
+  if(!email || !pass){ errEl.textContent = 'Completa todos los campos'; return; }
+
+  if(authMode === 'register'){
+    const pass2 = document.getElementById('auth-pass2').value;
+    if(pass !== pass2){ errEl.textContent = 'Las contraseñas no coinciden'; return; }
+    if(pass.length < 6){ errEl.textContent = 'La contraseña debe tener al menos 6 caracteres'; return; }
+  }
+
+  if(!auth){ errEl.textContent = 'Error: Firebase no disponible. Verifica tu conexión.'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Cargando...';
+  errEl.textContent = '';
+
+  try {
+    if(authMode === 'login'){
+      await auth.signInWithEmailAndPassword(email, pass);
+    } else {
+      await auth.createUserWithEmailAndPassword(email, pass);
+    }
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
+    const msgs = {
+      'auth/user-not-found': 'No existe una cuenta con ese correo',
+      'auth/wrong-password': 'Contraseña incorrecta',
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo',
+      'auth/invalid-email': 'Correo electrónico inválido',
+      'auth/weak-password': 'La contraseña es muy débil',
+      'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos'
+    };
+    errEl.textContent = msgs[e.code] || 'Error: ' + e.message;
+  }
+}
+
+async function signInGoogle(){
+  if(!auth){ toast('❌','Firebase no disponible'); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    await auth.signInWithPopup(provider);
+  } catch(e){
+    document.getElementById('auth-err').textContent = 'Error con Google: ' + e.message;
+  }
+}
+
+async function forgotPassword(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!email){ document.getElementById('auth-err').textContent = 'Ingresa tu correo primero'; return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    document.getElementById('auth-err').style.color = '#00b894';
+    document.getElementById('auth-err').textContent = '✅ Correo enviado. Revisa tu bandeja.';
+  } catch(e){
+    document.getElementById('auth-err').textContent = 'Error: ' + e.message;
+  }
+}
+
+function showUserMenu(){
+  if(!currentUser) return;
+  const menu = `
+    <div id="user-dropdown" style="position:fixed;top:60px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.15);z-index:9999;min-width:220px;overflow:hidden">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${currentUser.email}</div>
+        <div style="font-size:11px;color:var(--teal);margin-top:2px">☁️ Sincronizado con la nube</div>
+      </div>
+      <button onclick="syncNow()" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;border:none;background:none;font-family:var(--font);font-size:14px;color:var(--ink);cursor:pointer;text-align:left">🔄 Sincronizar ahora</button>
+      <button onclick="signOut()" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;border:none;background:none;font-family:var(--font);font-size:14px;color:#c62828;cursor:pointer;text-align:left">🚪 Cerrar sesión</button>
+    </div>`;
+  // Remove if exists
+  const existing = document.getElementById('user-dropdown');
+  if(existing){ existing.remove(); return; }
+  document.body.insertAdjacentHTML('beforeend', menu);
+  // Close on outside click
+  setTimeout(()=>{
+    document.addEventListener('click', function handler(e){
+      const dd = document.getElementById('user-dropdown');
+      if(dd && !dd.contains(e.target) && e.target.id !== 'user-avatar-btn'){
+        dd.remove();
+      }
+      document.removeEventListener('click', handler);
+    });
+  }, 100);
+}
+
+async function signOut(){
+  const dd = document.getElementById('user-dropdown');
+  if(dd) dd.remove();
+  if(auth) await auth.signOut();
+  notes = []; trashedNotes = [];
+  renderList(); renderPriorityIcons();
+}
+
+// ── Cloud sync ────────────────────────────────────────────────────────────
+async function loadNotesFromCloud(){
+  if(!currentUser || !db) return;
+  showSyncStatus('☁️ Cargando notas...');
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).collection('notes').get();
+    if(!snap.empty){
+      notes = snap.docs.map(d => d.data());
+      notes.sort((a,b) => new Date(b.created) - new Date(a.created));
+    } else {
+      // First time — upload local notes if any
+      const local = localStorage.getItem(STORAGE_KEY);
+      if(local){
+        try { notes = JSON.parse(local); }
+        catch(e){ notes = []; }
+        await uploadAllNotes();
+      }
+    }
+    // Also load trash
+    const trashSnap = await db.collection('users').doc(currentUser.uid).collection('trash').get();
+    if(!trashSnap.empty) trashedNotes = trashSnap.docs.map(d => d.data());
+    renderList(); renderPriorityIcons();
+    hideSyncStatus();
+  } catch(e){
+    hideSyncStatus();
+    console.error('Load error:', e);
+  }
+}
+
+async function uploadAllNotes(){
+  if(!currentUser) return;
+  const batch = db.batch();
+  notes.forEach(n => {
+    const ref = db.collection('users').doc(currentUser.uid).collection('notes').doc(n.id);
+    batch.set(ref, n);
+  });
+  await batch.commit();
+}
+
+function saveNotes(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  setSynced();
+  // Sync to cloud with debounce
+  if(currentUser && db){
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(syncToCloud, 2000);
+  }
+}
+
+async function syncToCloud(){
+  if(!currentUser || !db) return;
+  showSyncStatus('☁️ Guardando...');
+  try {
+    const batch = db.batch();
+    notes.forEach(n => {
+      const ref = db.collection('users').doc(currentUser.uid).collection('notes').doc(n.id);
+      batch.set(ref, n);
+    });
+    // Delete trashed notes from main collection
+    trashedNotes.forEach(n => {
+      const ref = db.collection('users').doc(currentUser.uid).collection('notes').doc(n.id);
+      batch.delete(ref);
+      const trashRef = db.collection('users').doc(currentUser.uid).collection('trash').doc(n.id);
+      batch.set(trashRef, n);
+    });
+    await batch.commit();
+    hideSyncStatus();
+  } catch(e){
+    hideSyncStatus();
+    toast('⚠️', 'Error al sincronizar');
+  }
+}
+
+async function syncNow(){
+  const dd = document.getElementById('user-dropdown');
+  if(dd) dd.remove();
+  await syncToCloud();
+  toast('☁️', 'Sincronizado correctamente');
+}
+
+function showSyncStatus(msg){
+  const el = document.getElementById('sync-status');
+  if(el){ el.textContent = msg; el.classList.add('show'); }
+}
+function hideSyncStatus(){
+  setTimeout(()=>{
+    const el = document.getElementById('sync-status');
+    if(el) el.classList.remove('show');
+  }, 1500);
+}
+
+// Allow Enter key on auth form
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && !document.getElementById('auth-screen').classList.contains('hidden')){
+    submitAuth();
+  }
+});
 let notes = [];
 let currentId = null;
 let ctxTargetId = null;
@@ -3169,6 +3497,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
+  // If Firebase not available, skip auth screen and use local storage only
+  if(!auth){
+    const authScr = document.getElementById('auth-screen');
+    if(authScr) authScr.classList.add('hidden');
+  }
   loadNotes();
   renderList();
   renderPriorityIcons();
