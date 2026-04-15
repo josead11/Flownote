@@ -640,20 +640,24 @@ select.tb-sel {
 #editor-content li { margin-bottom:4px; }
 #editor-content input[type=checkbox] { accent-color:var(--teal); margin-right:6px; }
 #editor-content .task-item {
-  display:flex; align-items:flex-start; gap:8px;
-  padding:3px 0; cursor:pointer; border-radius:6px;
-  transition:background 0.1s; margin:2px 0;
+  display:flex; align-items:center; gap:10px;
+  padding:4px 0; border-radius:8px;
+  transition:background 0.1s; margin:3px 0;
 }
 #editor-content .task-item:hover { background:var(--teal-l); }
 #editor-content .task-box {
-  font-size:18px; line-height:1.4; flex-shrink:0;
-  color:var(--teal); user-select:none; min-width:20px;
+  font-size:20px; line-height:1; flex-shrink:0;
+  color:var(--teal); cursor:pointer; user-select:none;
+  min-width:32px; min-height:32px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:8px; transition:transform 0.1s;
+  pointer-events:all; -webkit-user-select:none;
+  touch-action:manipulation;
 }
 #editor-content .task-text {
   flex:1; outline:none; min-height:1.4em;
-  line-height:1.4; color:var(--ink);
+  line-height:1.6; color:var(--ink);
 }
-#editor-content .task-item.done .task-box { color:var(--teal); }
 #editor-content .task-item.done .task-text {
   text-decoration:line-through; color:var(--ink3);
 }
@@ -2129,30 +2133,17 @@ function updateWC(){
 function fmt(cmd,val){document.getElementById('editor-content').focus();document.execCommand(cmd,false,val||null);updateWC();}
 function execFmt(c,v){document.getElementById('editor-content').focus();document.execCommand(c,false,v);}
 function insertCheck(){
-  document.getElementById('editor-content').focus();
-  document.execCommand('insertHTML', false,
-    '<div class="task-item" onclick="toggleTask(this)">' +
-    '<span class="task-box">&#9633;</span>' +
-    '<span class="task-text"></span>' +
-    '</div>');
-  // Move cursor into the task-text span
   const ec = document.getElementById('editor-content');
-  const taskText = ec.querySelector('.task-item:last-of-type .task-text');
-  if(taskText){
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.setStart(taskText, 0);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
+  ec.focus();
+  const html = '<div class="task-item"><span class="task-box">&#9633;</span><span class="task-text contenteditable-task">&nbsp;</span></div><br>';
+  document.execCommand('insertHTML', false, html);
 }
 
 function toggleTask(el){
-  el.classList.toggle('done');
-  // Update the checkbox character
+  if(!el) return;
+  const isDone = el.classList.toggle('done');
   const box = el.querySelector('.task-box');
-  if(box) box.innerHTML = el.classList.contains('done') ? '&#9745;' : '&#9633;';
+  if(box) box.innerHTML = isDone ? '&#9989;' : '&#9633;';
   saveNote(true);
 }
 
@@ -3855,13 +3846,20 @@ document.getElementById('editor-content').addEventListener('input',updateWC);
   });
 });
 
-// Handle task item clicks — toggle done state
-document.getElementById('editor-content').addEventListener('click', e=>{
-  const taskItem = e.target.closest('.task-item');
-  if(taskItem && (e.target.classList.contains('task-box') || e.target === taskItem)){
-    toggleTask(taskItem);
+// Handle task-box clicks — toggle done state
+// Use mousedown/touchstart to beat contenteditable's click capture
+function handleTaskClick(e){
+  const box = e.target.classList.contains('task-box') ? e.target
+    : e.target.closest('.task-box');
+  if(box){
+    e.preventDefault();
+    e.stopPropagation();
+    const taskItem = box.closest('.task-item');
+    if(taskItem) toggleTask(taskItem);
   }
-});
+}
+document.getElementById('editor-content').addEventListener('mousedown', handleTaskClick);
+document.getElementById('editor-content').addEventListener('touchend', handleTaskClick);
 document.getElementById('tag-select').addEventListener('change',()=>saveNote(true));
 document.getElementById('pin-check').addEventListener('change',()=>saveNote(true));
 document.getElementById('search-input').addEventListener('input',e=>renderList(currentFilter,e.target.value));
