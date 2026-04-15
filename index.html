@@ -1871,6 +1871,9 @@ async function loadNotesFromCloud(){
         }
       });
       notes = merged.sort((a,b) => new Date(b.created) - new Date(a.created));
+      // Deduplicate by id
+      const seen = new Set();
+      notes = notes.filter(n => { if(seen.has(n.id)) return false; seen.add(n.id); return true; });
       // Upload any local-only notes to cloud
       const localOnly = localNotes.filter(ln => !cloudNotes.find(cn => cn.id === ln.id));
       if(localOnly.length > 0) await uploadAllNotes();
@@ -1976,14 +1979,20 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 function loadNotes(){
   const raw = localStorage.getItem(STORAGE_KEY);
   if(raw){
-    try{ notes = JSON.parse(raw); }
+    try{
+      notes = JSON.parse(raw);
+      // Remove duplicates by id (keep first occurrence)
+      const seen = new Set();
+      notes = notes.filter(n => {
+        if(seen.has(n.id)) return false;
+        seen.add(n.id);
+        return true;
+      });
+    }
     catch(e){ notes = []; }
   } else {
-    // Notas de bienvenida
-    notes = [
-      { id:uid(), title:'Bienvenido a FlowNotes 👋', content:'<p>Tus notas se guardan <b>automaticamente</b> en este dispositivo.</p><p>✅ Sin necesidad de cuenta</p><p>✅ Funciona sin internet</p><p>✅ Tus datos son privados</p>', tag:'Personal', pinned:true, created:new Date().toISOString() },
-      { id:uid(), title:'Como usar FlowNotes', content:'<p>📋 <b>Panel izquierdo</b> — toca la pestana para ver tus notas</p><p>🔧 <b>Panel derecho</b> — calculadora y agenda</p><p>🌙 <b>Tema oscuro</b> — boton arriba a la derecha</p><p>💾 <b>Guardar</b> — automatico cada vez que escribes</p>', tag:'Ideas', pinned:false, created:new Date(Date.now()-86400000).toISOString() }
-    ];
+    // First install — start with empty notes, no welcome notes
+    notes = [];
     saveNotes();
   }
 }
@@ -2135,7 +2144,7 @@ function execFmt(c,v){document.getElementById('editor-content').focus();document
 function insertCheck(){
   const ec = document.getElementById('editor-content');
   ec.focus();
-  const html = '<div class="task-item"><span class="task-box">&#9633;</span><span class="task-text contenteditable-task">&nbsp;</span></div><br>';
+  const html = '<div class="task-item"><span class="task-box">⬜</span><span class="task-text contenteditable-task">&nbsp;</span></div><br>';
   document.execCommand('insertHTML', false, html);
 }
 
@@ -2143,7 +2152,7 @@ function toggleTask(el){
   if(!el) return;
   const isDone = el.classList.toggle('done');
   const box = el.querySelector('.task-box');
-  if(box) box.innerHTML = isDone ? '&#9989;' : '&#9633;';
+  if(box) box.innerHTML = isDone ? '✅' : '⬜';
   saveNote(true);
 }
 
