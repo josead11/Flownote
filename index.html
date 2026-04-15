@@ -174,7 +174,7 @@ body.dark #panel-search-wrap input { color:var(--ink); }
 .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.12); }
 .auth-google-btn { width:100%; padding:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; color:#fff; font-family:var(--font); font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s; }
 .auth-google-btn:hover { background:rgba(255,255,255,0.14); }
-#sync-status { position:fixed; top:56px; left:0; right:0; background:var(--teal); color:#fff; font-size:12px; font-weight:600; text-align:center; padding:4px; z-index:500; transform:translateY(-100%); transition:transform 0.3s; }
+#sync-status { position:fixed; top:56px; left:0; right:0; background:var(--teal); color:#fff; font-size:9px; font-weight:600; text-align:center; padding:1px; z-index:500; transform:translateY(-100%); transition:transform 0.3s; line-height:1; }
 #sync-status.show { transform:translateY(0); }
 #user-avatar-btn { width:32px; height:32px; border-radius:50%; background:var(--teal); color:#fff; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
@@ -1155,7 +1155,7 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
     <div class="topbar-spacer"></div>
   </div>
 
-  <div id="sync-status">☁️ Sincronizando...</div>
+  <div id="sync-status"></div>
   <div id="main-layout">
 
     <!-- ══ LEFT DRAWER: notas ══ -->
@@ -1842,7 +1842,7 @@ async function syncNow(){
 
 function showSyncStatus(msg){
   const el = document.getElementById('sync-status');
-  if(el){ el.textContent = msg; el.classList.add('show'); }
+  if(el) el.classList.add('show');
 }
 function hideSyncStatus(){
   setTimeout(()=>{
@@ -2509,9 +2509,20 @@ function doExport(type){
   const activeNotes = notes.filter(n=>!n.trashedAt);
 
   if(type==='json'){
-    const blob=new Blob([JSON.stringify(activeNotes,null,2)],{type:'application/json'});
-    downloadFile(blob,'FlowNotes_backup.json');
-    toast('📦','Exportado como JSON');
+    const jsonStr = JSON.stringify(activeNotes, null, 2);
+    // Try native share first (works great on Android)
+    if(navigator.share){
+      const file = new File([jsonStr], 'FlowNotes_backup.json', {type:'application/json'});
+      navigator.share({ files:[file], title:'FlowNotes backup' })
+        .catch(()=>{
+          // Fallback: copy to clipboard
+          copyToClipboard(jsonStr, '📦','JSON copiado al portapapeles');
+        });
+    } else {
+      const blob = new Blob([jsonStr], {type:'application/json'});
+      downloadFile(blob, 'FlowNotes_backup.json');
+      toast('📦','Exportado como JSON');
+    }
 
   } else if(type==='markdown'){
     let md = '# FlowNotes Export\n\n';
@@ -2520,9 +2531,15 @@ function doExport(type){
       md += '> ' + new Date(n.created).toLocaleDateString('es-ES') + '\n\n';
       md += strip(n.content) + '\n\n---\n\n';
     });
-    const blob=new Blob([md],{type:'text/markdown'});
-    downloadFile(blob,'FlowNotes.md');
-    toast('📄','Exportado como Markdown');
+    if(navigator.share){
+      const file = new File([md], 'FlowNotes.md', {type:'text/markdown'});
+      navigator.share({ files:[file], title:'FlowNotes Markdown' })
+        .catch(()=>{ copyToClipboard(md,'📄','Markdown copiado al portapapeles'); });
+    } else {
+      const blob = new Blob([md], {type:'text/markdown'});
+      downloadFile(blob, 'FlowNotes.md');
+      toast('📄','Exportado como Markdown');
+    }
 
   } else if(type==='pdf'){
     // Build printable HTML and open print dialog
@@ -2549,9 +2566,47 @@ function doExport(type){
   }
 }
 
+function copyToClipboard(text, icon, msg){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>toast(icon, msg));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(icon, msg);
+  }
+}
+
 function downloadFile(blob, filename){
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:filename});
-  a.click();
+  // Try standard download first
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  } catch(e){
+    // Fallback for Android APK — use FileReader to get base64
+    const reader = new FileReader();
+    reader.onload = function(){
+      const dataUrl = reader.result;
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+    reader.readAsDataURL(blob);
+  }
 }
 
 function importNotes(){
@@ -3497,11 +3552,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
-  // If Firebase not available, skip auth screen and use local storage only
-  if(!auth){
-    const authScr = document.getElementById('auth-screen');
-    if(authScr) authScr.classList.add('hidden');
-  }
+  // Auth temporarily disabled — skip login, use local storage
+  const authScr = document.getElementById('auth-screen');
+  if(authScr) authScr.classList.add('hidden');
   loadNotes();
   renderList();
   renderPriorityIcons();
