@@ -1218,7 +1218,7 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
               <button class="ck wide" onclick="calcKey('0')">0</button>
               <button class="ck" onclick="calcKey('.')">.</button>
               <button class="ck op" onclick="calcBackspace()">⌫</button>
-              <button class="ck eq wide" onclick="calcOp('=')">=</button>
+              <button class="ck eq" style="grid-column:span 4;text-align:center" onclick="calcOp('=')">=</button>
             </div>
           </div>
         </div>
@@ -2974,9 +2974,9 @@ function openAlarmModal(id){
     if(existingEl){ existingEl.style.display='block'; existingEl.textContent = '🔔 Recordatorio activo: ' + d.toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}); }
     if(removeBtn) removeBtn.style.display='block';
   } else {
-    // Default: today + 1 hour
+    // Default: next minute
     const now = new Date();
-    now.setHours(now.getHours()+1, 0, 0, 0);
+    now.setMinutes(now.getMinutes() + 1, 0, 0);
     document.getElementById('alarm-date').value = now.toISOString().split('T')[0];
     document.getElementById('alarm-time').value = now.toTimeString().slice(0,5);
     document.getElementById('alarm-msg').value = '';
@@ -3000,7 +3000,9 @@ function saveAlarm(){
   if(!dateVal || !timeVal){ toast('❌','Elige fecha y hora'); return; }
 
   const datetime = new Date(dateVal + 'T' + timeVal);
-  if(datetime <= new Date()){ toast('❌','La fecha debe ser en el futuro'); return; }
+  const now = new Date();
+  const minFuture = new Date(now.getTime() + 60000); // at least 1 minute ahead
+  if(datetime < minFuture){ toast('❌','Elige al menos 1 minuto en el futuro'); return; }
 
   const n = notes.find(x=>x.id===alarmTargetId);
   if(!n){ closeAlarmModal(); return; }
