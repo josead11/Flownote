@@ -188,8 +188,25 @@ body.dark #panel-search-wrap input { color:var(--ink); }
 
 /* user-chip removed */
 
-.tb-btn { width:38px; height:38px; border:none; background:none; cursor:pointer; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--ink2); transition:background 0.15s; }
-.tb-btn:hover { background:var(--bg); }
+.tb-btn {
+  width:36px; height:36px; border:none; background:none; cursor:pointer;
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  color:var(--ink3); transition:all 0.18s; flex-shrink:0;
+}
+.tb-btn:hover { background:var(--teal-l); color:var(--teal); }
+.tb-btn svg { transition:transform 0.2s; }
+.tb-btn:hover svg { transform:scale(1.1); }
+
+/* User avatar btn refined */
+#user-avatar-btn {
+  width:32px; height:32px; border-radius:50%;
+  background:var(--teal); color:#fff; border:none;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; flex-shrink:0; transition:all 0.18s;
+  font-size:13px; font-weight:700;
+}
+#user-avatar-btn:hover { background:var(--teal-d); transform:scale(1.05); }
+#user-avatar-btn svg { stroke:#fff; }
 
 /* ══════════ MAIN LAYOUT ══════════ */
 #main-layout { display:flex; flex:1; overflow:hidden; position:relative; min-height:0; }
@@ -521,6 +538,26 @@ body.dark #alarm-date, body.dark #alarm-time, body.dark #alarm-msg {
 
 /* Note alarm badge in list */
 .ni-alarm { font-size:11px; color:var(--teal); font-weight:600; }
+
+/* Color picker */
+#color-card {
+  background:var(--surface); border-radius:24px 24px 0 0;
+  width:100%; max-width:480px; padding:20px 20px 32px;
+  animation:slideUp 0.3s cubic-bezier(.16,1,.3,1);
+}
+#color-grid {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+}
+.color-swatch {
+  aspect-ratio:1; border-radius:14px; cursor:pointer;
+  border:3px solid transparent; transition:all 0.15s;
+  display:flex; align-items:center; justify-content:center;
+}
+.color-swatch:hover { transform:scale(1.1); }
+.color-swatch.active { border-color:#fff; box-shadow:0 0 0 2px var(--teal), 0 4px 12px rgba(0,0,0,0.2); }
+.color-swatch svg { opacity:0; transition:opacity 0.15s; }
+.color-swatch.active svg { opacity:1; }
+body.dark #color-card { background:var(--surface); }
 
 /* sync indicator */
 #sync-bar {
@@ -1146,12 +1183,36 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
       <div class="app-logo-icon">📝</div>
       <div class="app-logo-name">Flow<span>Notes</span></div>
     </div>
-    <div style="display:flex;align-items:center;gap:2px;margin-left:8px;">
-      <button class="tb-btn" id="theme-btn" title="Tema" onclick="toggleTheme()">🌙</button>
-      <button class="tb-btn" title="Configuración" onclick="openSettings()">⚙️</button>
-      <button id="user-avatar-btn" title="Mi cuenta" onclick="showUserMenu()">👤</button>
-    </div>
     <div class="topbar-spacer"></div>
+    <div style="display:flex;align-items:center;gap:2px;padding-right:4px;">
+      <button class="tb-btn" id="theme-btn" title="Color del tema" onclick="openColorPicker()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3 Q14 6 17 7 Q20 8 21 11 Q22 14 20 17 Q18 20 15 21 Q12 22 9 21 Q6 20 4 17 Q2 14 3 11 Q4 8 7 7 Q10 6 12 3Z" fill="url(#rainbow)"/>
+          <defs>
+            <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff6b6b"/>
+              <stop offset="20%" stop-color="#ffd93d"/>
+              <stop offset="40%" stop-color="#6bcb77"/>
+              <stop offset="60%" stop-color="#4ecdc4"/>
+              <stop offset="80%" stop-color="#4d96ff"/>
+              <stop offset="100%" stop-color="#c77dff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </button>
+      <button class="tb-btn" title="Configuración" onclick="openSettings()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button id="user-avatar-btn" title="Mi cuenta" onclick="showUserMenu()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div id="sync-status"></div>
@@ -1410,6 +1471,24 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
   </div>
 </div>
 
+<!-- COLOR PICKER MODAL -->
+<div id="color-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center;z-index:4000;backdrop-filter:blur(6px)">
+  <div id="color-card">
+    <div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">🎨 Color del tema</h3>
+    <p style="font-size:12px;color:var(--ink3);margin-bottom:16px">Elige un color de acento para la app</p>
+    <div id="color-grid"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:600;color:var(--ink2)">Tema oscuro</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="color-dark-toggle" onchange="settingDark(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <button onclick="document.getElementById('color-modal').style.display='none'" style="width:100%;margin-top:12px;padding:12px;border:none;border-radius:12px;background:var(--bg);font-family:var(--font);font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer">Cerrar</button>
+  </div>
+</div>
+
 <!-- EXPORT MODAL -->
 <div id="export-modal">
   <div class="export-card">
@@ -1629,6 +1708,8 @@ try {
     if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
+    // Keep user logged in permanently — never ask for login again
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
   }
 } catch(e){ console.warn('Firebase no disponible:', e); }
 
@@ -1773,24 +1854,42 @@ async function loadNotesFromCloud(){
   try {
     const snap = await db.collection('users').doc(currentUser.uid).collection('notes').get();
     if(!snap.empty){
-      notes = snap.docs.map(d => d.data());
-      notes.sort((a,b) => new Date(b.created) - new Date(a.created));
+      const cloudNotes = snap.docs.map(d => d.data());
+      // Merge cloud + local — keep newest version of each note
+      const localRaw = localStorage.getItem(STORAGE_KEY);
+      const localNotes = localRaw ? JSON.parse(localRaw) : [];
+      const merged = [...cloudNotes];
+      localNotes.forEach(ln => {
+        const inCloud = merged.find(cn => cn.id === ln.id);
+        if(!inCloud){
+          // Local note not in cloud — add it
+          merged.push(ln);
+        }
+      });
+      notes = merged.sort((a,b) => new Date(b.created) - new Date(a.created));
+      // Upload any local-only notes to cloud
+      const localOnly = localNotes.filter(ln => !cloudNotes.find(cn => cn.id === ln.id));
+      if(localOnly.length > 0) await uploadAllNotes();
     } else {
-      // First time — upload local notes if any
+      // No cloud notes — upload local notes if any
       const local = localStorage.getItem(STORAGE_KEY);
       if(local){
         try { notes = JSON.parse(local); }
         catch(e){ notes = []; }
-        await uploadAllNotes();
+        if(notes.length) await uploadAllNotes();
       }
     }
     // Also load trash
     const trashSnap = await db.collection('users').doc(currentUser.uid).collection('trash').get();
     if(!trashSnap.empty) trashedNotes = trashSnap.docs.map(d => d.data());
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
     renderList(); renderPriorityIcons();
     hideSyncStatus();
   } catch(e){
     hideSyncStatus();
+    // On error, use local notes
+    const local = localStorage.getItem(STORAGE_KEY);
+    if(local) try { notes = JSON.parse(local); renderList(); renderPriorityIcons(); } catch(e){}
     console.error('Load error:', e);
   }
 }
@@ -2644,12 +2743,21 @@ function importNotes(){
     const file=e.target.files[0];
     if(!file)return;
     const reader=new FileReader();
-    reader.onload=ev=>{
+    reader.onload=async ev=>{
       try{
         const imported=JSON.parse(ev.target.result);
         if(Array.isArray(imported)){
+          // Merge imported with existing — imported takes priority
           notes=[...imported,...notes.filter(n=>!imported.find(i=>i.id===n.id))];
-          saveNotes(); renderList(); toast('📥',imported.length+' notas importadas');
+          saveNotes(); renderList(); renderPriorityIcons();
+          toast('📥', imported.length+' notas importadas');
+          // Immediately upload to Firestore so they persist
+          if(currentUser && db){
+            showSyncStatus('☁️ Subiendo notas...');
+            await uploadAllNotes();
+            hideSyncStatus();
+            toast('☁️','Notas sincronizadas con la nube');
+          }
         }
       }catch(e){toast('❌','Error al importar');}
     };
@@ -2845,20 +2953,27 @@ window.closeprint = function(){
 };
 
 // ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
+const sunSVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+const moonSVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+function setThemeIcon(isDark){
+  const btn = document.getElementById('theme-btn');
+  if(btn) btn.innerHTML = isDark ? sunSVG : moonSVG;
+}
+
 function toggleTheme(){
   const isDark=document.body.classList.toggle('dark');
   localStorage.setItem('fn_theme',isDark?'dark':'light');
-  document.getElementById('theme-btn').textContent=isDark?'☀️':'🌙';
+  setThemeIcon(isDark);
   toast(isDark?'🌙':'☀️',isDark?'Tema oscuro':'Tema claro');
 }
 // Aplicar tema al cargar
 (function(){
   if(localStorage.getItem('fn_theme')==='dark'){
     document.body.classList.add('dark');
-    document.addEventListener('DOMContentLoaded',()=>{
-      const b=document.getElementById('theme-btn');
-      if(b)b.textContent='☀️';
-    });
+    document.addEventListener('DOMContentLoaded',()=>setThemeIcon(true));
+  } else {
+    document.addEventListener('DOMContentLoaded',()=>setThemeIcon(false));
   }
 })();
 
@@ -3575,6 +3690,91 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(hasAlarms && 'Notification' in window && Notification.permission === 'granted'){
     scheduleAlarmCheck();
   }
+});
+
+// ══════════ COLOR PICKER ═════════════════════════════════════════════════
+const THEME_COLORS = [
+  {name:'Verde esmeralda', teal:'#00b894', dark:'#00836b', light:'#e0f7f2'},
+  {name:'Aguamarina',      teal:'#00cec9', dark:'#009e9b', light:'#e0f9f9'},
+  {name:'Azul oceano',     teal:'#0984e3', dark:'#0668b3', light:'#e3f2ff'},
+  {name:'Azul rey',        teal:'#2d6af6', dark:'#1a4fd4', light:'#e8edff'},
+  {name:'Violeta',         teal:'#6c5ce7', dark:'#4f3ec8', light:'#f0eeff'},
+  {name:'Purpura',         teal:'#a855f7', dark:'#7c3aed', light:'#f5f0ff'},
+  {name:'Rosa fuerte',     teal:'#e84393', dark:'#c2186e', light:'#ffe8f4'},
+  {name:'Coral',           teal:'#e17055', dark:'#b85a3c', light:'#fff0eb'},
+  {name:'Naranja',         teal:'#f39c12', dark:'#c47d0e', light:'#fff8e1'},
+  {name:'Amarillo',        teal:'#fdcb6e', dark:'#e0a800', light:'#fffae0'},
+  {name:'Lima',            teal:'#55efc4', dark:'#00b894', light:'#e0fff6'},
+  {name:'Verde bosque',    teal:'#2ecc71', dark:'#27ae60', light:'#e8faf0'},
+  {name:'Cian',            teal:'#00b4d8', dark:'#0077b6', light:'#e0f7ff'},
+  {name:'Indigo',          teal:'#4361ee', dark:'#3a0ca3', light:'#eef0ff'},
+  {name:'Magenta',         teal:'#f72585', dark:'#c01f6d', light:'#ffe0f0'},
+  {name:'Salmon',          teal:'#ff6b6b', dark:'#ee5a24', light:'#fff0f0'},
+  {name:'Dorado',          teal:'#e9c46a', dark:'#c49a2a', light:'#fdf8e1'},
+  {name:'Tierra',          teal:'#b5838d', dark:'#8a5a63', light:'#f9f0f1'},
+  {name:'Gris azulado',    teal:'#6c757d', dark:'#495057', light:'#f0f2f4'},
+  {name:'Carbon',          teal:'#2d3436', dark:'#1a1f20', light:'#eaecee'},
+];
+
+function openColorPicker(){
+  const modal = document.getElementById('color-modal');
+  const grid = document.getElementById('color-grid');
+  const darkToggle = document.getElementById('color-dark-toggle');
+
+  // Sync dark toggle
+  if(darkToggle) darkToggle.checked = document.body.classList.contains('dark');
+
+  // Build swatches
+  const currentTeal = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim();
+  grid.innerHTML = THEME_COLORS.map((c,i) => `
+    <div class="color-swatch ${c.teal.toLowerCase() === currentTeal.toLowerCase() ? 'active' : ''}"
+      style="background:${c.teal}"
+      onclick="applyThemeColor(${i})"
+      title="${c.name}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+        <polyline points="20,6 9,17 4,12"/>
+      </svg>
+    </div>`).join('');
+
+  modal.style.display = 'flex';
+}
+
+function applyThemeColor(index){
+  const c = THEME_COLORS[index];
+  const root = document.documentElement;
+  root.style.setProperty('--teal', c.teal);
+  root.style.setProperty('--teal-d', c.dark);
+  root.style.setProperty('--teal-l', c.light);
+
+  // Save to localStorage
+  localStorage.setItem('fn_theme_color', JSON.stringify(c));
+
+  // Update active swatch
+  document.querySelectorAll('.color-swatch').forEach((s,i) => {
+    s.classList.toggle('active', i === index);
+  });
+
+  toast('🎨', c.name + ' aplicado');
+}
+
+// Apply saved color on load
+(function(){
+  const saved = localStorage.getItem('fn_theme_color');
+  if(saved){
+    try {
+      const c = JSON.parse(saved);
+      const root = document.documentElement;
+      root.style.setProperty('--teal', c.teal);
+      root.style.setProperty('--teal-d', c.dark);
+      root.style.setProperty('--teal-l', c.light);
+    } catch(e){}
+  }
+})();
+
+// Close on overlay click
+document.addEventListener('DOMContentLoaded', ()=>{
+  const cm = document.getElementById('color-modal');
+  if(cm) cm.addEventListener('click', e=>{ if(e.target===cm) cm.style.display='none'; });
 });
 
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
