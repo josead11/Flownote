@@ -2474,25 +2474,17 @@ function doExport(type){
 
   if(type==='json'){
     const jsonStr = JSON.stringify(activeNotes, null, 2);
-    // Method 1: data URI (most compatible with Android APK)
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
-    const a = document.createElement('a');
-    a.href = dataUri;
-    a.download = 'FlowNotes_backup.json';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    // Fallback: also offer to copy to clipboard
-    setTimeout(()=>{
-      if(navigator.clipboard){
-        navigator.clipboard.writeText(jsonStr)
-          .then(()=> toast('📦','JSON descargado y copiado al portapapeles'))
-          .catch(()=> toast('📦','JSON exportado'));
-      } else {
-        toast('📦','JSON exportado');
-      }
-    }, 500);
+
+    // Method 1: Web Share API con archivo (Android nativo)
+    if(navigator.canShare && navigator.canShare({files:[new File([jsonStr],'x.json',{type:'application/json'})]})){
+      const file = new File([jsonStr], 'FlowNotes_backup.json', {type:'application/json'});
+      navigator.share({ files:[file], title:'FlowNotes backup', text:'Mis notas de FlowNotes' })
+        .then(()=> toast('📦','Compartido exitosamente'))
+        .catch(()=> fallbackJsonExport(jsonStr));
+      return;
+    }
+    // Method 2: Fallback
+    fallbackJsonExport(jsonStr);
 
   } else if(type==='markdown'){
     let md = '# FlowNotes Export\n\n';
@@ -2548,6 +2540,48 @@ function copyToClipboard(text, icon, msg){
     document.body.removeChild(ta);
     toast(icon, msg);
   }
+}
+
+function fallbackJsonExport(jsonStr){
+  // Show modal with options: copy or view raw
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;text-align:center';
+
+  card.innerHTML =
+    '<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>' +
+    '<div style="font-size:32px;margin-bottom:8px">📦</div>' +
+    '<h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">Exportar JSON</h3>' +
+    '<p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Copia el contenido y guárdalo en un archivo .json usando cualquier app de notas o Google Drive.</p>' +
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+    '<button id="copy-json-btn" style="padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer">📋 Copiar al portapapeles</button>' +
+    '<button id="share-text-btn" style="padding:14px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:14px;font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer">📤 Compartir como texto</button>' +
+    '<button id="close-export-btn" style="padding:12px;background:none;color:var(--ink3);border:none;font-family:var(--font);font-size:14px;cursor:pointer">Cancelar</button>' +
+    '</div>';
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  document.getElementById('copy-json-btn').onclick = ()=>{
+    copyToClipboard(jsonStr, '📋', 'JSON copiado — pégalo en Google Drive o Notas');
+    overlay.remove();
+  };
+
+  document.getElementById('share-text-btn').onclick = ()=>{
+    if(navigator.share){
+      navigator.share({ title:'FlowNotes backup', text:jsonStr })
+        .then(()=>{ overlay.remove(); toast('📦','Compartido'); })
+        .catch(()=>{ overlay.remove(); });
+    } else {
+      copyToClipboard(jsonStr, '📋', 'JSON copiado al portapapeles');
+      overlay.remove();
+    }
+  };
+
+  document.getElementById('close-export-btn').onclick = ()=> overlay.remove();
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 }
 
 function downloadFile(blob, filename){
