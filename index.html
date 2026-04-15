@@ -2474,19 +2474,25 @@ function doExport(type){
 
   if(type==='json'){
     const jsonStr = JSON.stringify(activeNotes, null, 2);
-    // Try native share first (works great on Android)
-    if(navigator.share){
-      const file = new File([jsonStr], 'FlowNotes_backup.json', {type:'application/json'});
-      navigator.share({ files:[file], title:'FlowNotes backup' })
-        .catch(()=>{
-          // Fallback: copy to clipboard
-          copyToClipboard(jsonStr, '📦','JSON copiado al portapapeles');
-        });
-    } else {
-      const blob = new Blob([jsonStr], {type:'application/json'});
-      downloadFile(blob, 'FlowNotes_backup.json');
-      toast('📦','Exportado como JSON');
-    }
+    // Method 1: data URI (most compatible with Android APK)
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = 'FlowNotes_backup.json';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Fallback: also offer to copy to clipboard
+    setTimeout(()=>{
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(jsonStr)
+          .then(()=> toast('📦','JSON descargado y copiado al portapapeles'))
+          .catch(()=> toast('📦','JSON exportado'));
+      } else {
+        toast('📦','JSON exportado');
+      }
+    }, 500);
 
   } else if(type==='markdown'){
     let md = '# FlowNotes Export\n\n';
@@ -2495,15 +2501,15 @@ function doExport(type){
       md += '> ' + new Date(n.created).toLocaleDateString('es-ES') + '\n\n';
       md += strip(n.content) + '\n\n---\n\n';
     });
-    if(navigator.share){
-      const file = new File([md], 'FlowNotes.md', {type:'text/markdown'});
-      navigator.share({ files:[file], title:'FlowNotes Markdown' })
-        .catch(()=>{ copyToClipboard(md,'📄','Markdown copiado al portapapeles'); });
-    } else {
-      const blob = new Blob([md], {type:'text/markdown'});
-      downloadFile(blob, 'FlowNotes.md');
-      toast('📄','Exportado como Markdown');
-    }
+    const dataUri = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(md);
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = 'FlowNotes.md';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('📄','Exportado como Markdown');
 
   } else if(type==='pdf'){
     // Build printable HTML and open print dialog
