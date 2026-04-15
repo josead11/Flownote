@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FlowNotes</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
-<!-- Firebase SDKs desactivados temporalmente -->
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --teal: #00b894;
@@ -1102,7 +1105,39 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 <body>
 
 <!-- ══════════ APP ══════════ -->
-<!-- AUTH SCREEN desactivada temporalmente -->
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-wrap">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo-icon">📝</div>
+      <div class="auth-logo-name">Flow<span>Notes</span></div>
+    </div>
+    <p class="auth-tagline">Tus notas, en cualquier lugar</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+
+    <div id="auth-form">
+      <div class="auth-field">
+        <label>Correo electrónico</label>
+        <input type="email" id="auth-email" placeholder="tu@correo.com" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-pass" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+      </div>
+      <div class="auth-field" id="auth-pass2-wrap" style="display:none">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="auth-pass2" placeholder="Repite tu contraseña">
+      </div>
+      <div id="auth-err"></div>
+      <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Iniciar sesión</button>
+      <div id="auth-forgot" onclick="forgotPassword()" style="text-align:center;margin-top:12px;font-size:13px;color:var(--teal);cursor:pointer">¿Olvidaste tu contraseña?</div>
+    </div>
+  </div>
+</div>
 <div id="app">
 
   <!-- TOP BAR -->
@@ -1379,17 +1414,24 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
 <div id="export-modal">
   <div class="export-card">
     <h3>📤 Exportar notas</h3>
-    <div class="export-opt" onclick="doExport('json')">
-      <span class="export-opt-icon">📦</span>
+    <div class="export-opt" onclick="doExport('copy')">
+      <span class="export-opt-icon">📋</span>
       <div class="export-opt-text">
-        <h4>JSON</h4>
-        <p>Copia de seguridad completa. Importable de nuevo.</p>
+        <h4>Copiar JSON</h4>
+        <p>Copia el backup y pégalo en Drive, WhatsApp o Notas.</p>
+      </div>
+    </div>
+    <div class="export-opt" onclick="doExport('share')">
+      <span class="export-opt-icon">📤</span>
+      <div class="export-opt-text">
+        <h4>Compartir JSON</h4>
+        <p>Envíalo por WhatsApp, Gmail, Telegram, etc.</p>
       </div>
     </div>
     <div class="export-opt" onclick="doExport('markdown')">
       <span class="export-opt-icon">📄</span>
       <div class="export-opt-text">
-        <h4>Markdown (.md)</h4>
+        <h4>Markdown</h4>
         <p>Compatible con Notion, Obsidian y más.</p>
       </div>
     </div>
@@ -2471,20 +2513,33 @@ function exportPDF(){ doExport('pdf'); }
 function doExport(type){
   document.getElementById('export-modal').classList.remove('open');
   const activeNotes = notes.filter(n=>!n.trashedAt);
+  const jsonStr = JSON.stringify(activeNotes, null, 2);
 
-  if(type==='json'){
-    const jsonStr = JSON.stringify(activeNotes, null, 2);
-
-    // Method 1: Web Share API con archivo (Android nativo)
-    if(navigator.canShare && navigator.canShare({files:[new File([jsonStr],'x.json',{type:'application/json'})]})){
-      const file = new File([jsonStr], 'FlowNotes_backup.json', {type:'application/json'});
-      navigator.share({ files:[file], title:'FlowNotes backup', text:'Mis notas de FlowNotes' })
-        .then(()=> toast('📦','Compartido exitosamente'))
-        .catch(()=> fallbackJsonExport(jsonStr));
-      return;
+  if(type==='copy'){
+    // Copy to clipboard — works 100% on Android
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(jsonStr)
+        .then(()=> toast('📋','JSON copiado — pégalo en Drive o Notas'))
+        .catch(()=> copyFallback(jsonStr));
+    } else {
+      copyFallback(jsonStr);
     }
-    // Method 2: Fallback
-    fallbackJsonExport(jsonStr);
+
+  } else if(type==='share'){
+    // Share as text via Android share menu
+    if(navigator.share){
+      navigator.share({
+        title: 'FlowNotes backup',
+        text: jsonStr
+      }).then(()=> toast('📤','Compartido exitosamente'))
+        .catch(()=> toast('❌','Cancelado'));
+    } else {
+      // Fallback to copy
+      if(navigator.clipboard){
+        navigator.clipboard.writeText(jsonStr)
+          .then(()=> toast('📋','JSON copiado al portapapeles'));
+      }
+    }
 
   } else if(type==='markdown'){
     let md = '# FlowNotes Export\n\n';
@@ -2542,46 +2597,15 @@ function copyToClipboard(text, icon, msg){
   }
 }
 
-function fallbackJsonExport(jsonStr){
-  // Show modal with options: copy or view raw
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
-
-  const card = document.createElement('div');
-  card.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;text-align:center';
-
-  card.innerHTML =
-    '<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>' +
-    '<div style="font-size:32px;margin-bottom:8px">📦</div>' +
-    '<h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">Exportar JSON</h3>' +
-    '<p style="font-size:13px;color:var(--ink3);margin-bottom:20px">Copia el contenido y guárdalo en un archivo .json usando cualquier app de notas o Google Drive.</p>' +
-    '<div style="display:flex;flex-direction:column;gap:10px">' +
-    '<button id="copy-json-btn" style="padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer">📋 Copiar al portapapeles</button>' +
-    '<button id="share-text-btn" style="padding:14px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:14px;font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer">📤 Compartir como texto</button>' +
-    '<button id="close-export-btn" style="padding:12px;background:none;color:var(--ink3);border:none;font-family:var(--font);font-size:14px;cursor:pointer">Cancelar</button>' +
-    '</div>';
-
-  overlay.appendChild(card);
-  document.body.appendChild(overlay);
-
-  document.getElementById('copy-json-btn').onclick = ()=>{
-    copyToClipboard(jsonStr, '📋', 'JSON copiado — pégalo en Google Drive o Notas');
-    overlay.remove();
-  };
-
-  document.getElementById('share-text-btn').onclick = ()=>{
-    if(navigator.share){
-      navigator.share({ title:'FlowNotes backup', text:jsonStr })
-        .then(()=>{ overlay.remove(); toast('📦','Compartido'); })
-        .catch(()=>{ overlay.remove(); });
-    } else {
-      copyToClipboard(jsonStr, '📋', 'JSON copiado al portapapeles');
-      overlay.remove();
-    }
-  };
-
-  document.getElementById('close-export-btn').onclick = ()=> overlay.remove();
-  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+function copyFallback(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0.01;width:1px;height:1px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); toast('📋','Copiado al portapapeles'); }
+  catch(e){ toast('❌','No se pudo copiar'); }
+  document.body.removeChild(ta);
 }
 
 function downloadFile(blob, filename){
@@ -3556,9 +3580,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
-  // Auth temporarily disabled — skip login, use local storage
-  const authScr = document.getElementById('auth-screen');
-  if(authScr) authScr.classList.add('hidden');
+  // If Firebase not available, skip auth screen and use local storage only
+  if(!auth){
+    const authScr = document.getElementById('auth-screen');
+    if(authScr) authScr.classList.add('hidden');
+  }
   loadNotes();
   renderList();
   renderPriorityIcons();
