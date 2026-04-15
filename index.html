@@ -557,6 +557,24 @@ select.tb-sel {
 #editor-content ul, #editor-content ol { padding-left:22px; }
 #editor-content li { margin-bottom:4px; }
 #editor-content input[type=checkbox] { accent-color:var(--teal); margin-right:6px; }
+#editor-content .task-item {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:3px 0; cursor:pointer; border-radius:6px;
+  transition:background 0.1s; margin:2px 0;
+}
+#editor-content .task-item:hover { background:var(--teal-l); }
+#editor-content .task-box {
+  font-size:18px; line-height:1.4; flex-shrink:0;
+  color:var(--teal); user-select:none; min-width:20px;
+}
+#editor-content .task-text {
+  flex:1; outline:none; min-height:1.4em;
+  line-height:1.4; color:var(--ink);
+}
+#editor-content .task-item.done .task-box { color:var(--teal); }
+#editor-content .task-item.done .task-text {
+  text-decoration:line-through; color:var(--ink3);
+}
 
 #editor-bottom {
   padding:10px 20px; border-top:1px solid var(--border);
@@ -1679,7 +1697,30 @@ function fmt(cmd,val){document.getElementById('editor-content').focus();document
 function execFmt(c,v){document.getElementById('editor-content').focus();document.execCommand(c,false,v);}
 function insertCheck(){
   document.getElementById('editor-content').focus();
-  document.execCommand('insertHTML',false,'<p><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" onchange="saveNote(true)"> <span></span></label></p>');
+  document.execCommand('insertHTML', false,
+    '<div class="task-item" onclick="toggleTask(this)">' +
+    '<span class="task-box">&#9633;</span>' +
+    '<span class="task-text"></span>' +
+    '</div>');
+  // Move cursor into the task-text span
+  const ec = document.getElementById('editor-content');
+  const taskText = ec.querySelector('.task-item:last-of-type .task-text');
+  if(taskText){
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.setStart(taskText, 0);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
+function toggleTask(el){
+  el.classList.toggle('done');
+  // Update the checkbox character
+  const box = el.querySelector('.task-box');
+  if(box) box.innerHTML = el.classList.contains('done') ? '&#9745;' : '&#9633;';
+  saveNote(true);
 }
 
 // ══════════ NOTA DE VOZ ══════════════════════════════════════════════════
@@ -3187,23 +3228,23 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 document.getElementById('editor-content').addEventListener('input',updateWC);
-// Save checkbox state when clicked in editor
-document.getElementById('editor-content').addEventListener('click', e=>{
-  if(e.target && e.target.type === 'checkbox'){
-    clearTimeout(asSave);
-    asSave = setTimeout(()=>saveNote(true), 300);
-  }
-});
-
 ['note-title-input','editor-content'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     clearTimeout(asSave);
-    asSave=setTimeout(()=>saveNote(true), 1500); // silent autosave
+    asSave=setTimeout(()=>saveNote(true), 1500);
     if(id==='note-title-input'){
       const preview=document.getElementById('editor-note-title-preview');
       if(preview) preview.textContent=document.getElementById('note-title-input').value||'Sin titulo';
     }
   });
+});
+
+// Handle task item clicks — toggle done state
+document.getElementById('editor-content').addEventListener('click', e=>{
+  const taskItem = e.target.closest('.task-item');
+  if(taskItem && (e.target.classList.contains('task-box') || e.target === taskItem)){
+    toggleTask(taskItem);
+  }
 });
 document.getElementById('tag-select').addEventListener('change',()=>saveNote(true));
 document.getElementById('pin-check').addEventListener('change',()=>saveNote(true));
