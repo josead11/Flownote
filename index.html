@@ -1875,23 +1875,42 @@ async function loadNotesFromCloud(){
     const snap = await db.collection('users').doc(currentUser.uid).collection('notes').get();
     if(!snap.empty){
       const cloudNotes = snap.docs.map(d => d.data());
+      // Filter out old welcome/tutorial notes
+      // Delete welcome notes from Firestore permanently
+      const welcomeNotes = cloudNotes.filter(n =>
+        n.title && (n.title.includes('Bienvenido a FlowNotes') || n.title.includes('Como usar FlowNotes'))
+      );
+      if(welcomeNotes.length > 0){
+        const batch = db.batch();
+        welcomeNotes.forEach(n => {
+          batch.delete(db.collection('users').doc(currentUser.uid).collection('notes').doc(n.id));
+        });
+        batch.commit().catch(e=>console.warn('Delete welcome:', e));
+      }
+
+      const filtered = cloudNotes.filter(n =>
+        !n.title.includes('Bienvenido a FlowNotes') &&
+        !n.title.includes('Como usar FlowNotes')
+      );
       // Merge cloud + local — keep newest version of each note
       const localRaw = localStorage.getItem(STORAGE_KEY);
       const localNotes = localRaw ? JSON.parse(localRaw) : [];
-      const merged = [...cloudNotes];
-      localNotes.forEach(ln => {
+      // Also filter local welcome notes
+      const cleanLocal = localNotes.filter(n =>
+        !n.title.includes('Bienvenido a FlowNotes') &&
+        !n.title.includes('Como usar FlowNotes')
+      );
+      const merged = [...filtered];
+      cleanLocal.forEach(ln => {
         const inCloud = merged.find(cn => cn.id === ln.id);
-        if(!inCloud){
-          // Local note not in cloud — add it
-          merged.push(ln);
-        }
+        if(!inCloud) merged.push(ln);
       });
       notes = merged.sort((a,b) => new Date(b.created) - new Date(a.created));
       // Deduplicate by id
       const seen = new Set();
       notes = notes.filter(n => { if(seen.has(n.id)) return false; seen.add(n.id); return true; });
       // Upload any local-only notes to cloud
-      const localOnly = localNotes.filter(ln => !cloudNotes.find(cn => cn.id === ln.id));
+      const localOnly = cleanLocal.filter(ln => !filtered.find(cn => cn.id === ln.id));
       if(localOnly.length > 0) await uploadAllNotes();
     } else {
       // No cloud notes — upload local notes if any
