@@ -2953,7 +2953,6 @@ function printCurrentNote(){
 
   const notesToPrint = n ? [n] : notes;
 
-  // Build plain text
   let text = '';
   notesToPrint.forEach(note=>{
     text += (note.title||'Sin titulo') + '\n';
@@ -2961,16 +2960,25 @@ function printCurrentNote(){
     text += strip(note.content||'') + '\n\n---\n\n';
   });
 
-  // Use navigator.share — this opens Android share sheet with Imprimir option
+  const title = n ? (n.title||'Nota') : 'FlowNotes';
+
+  // Method 1: Android Intent URI — works in APK/WebView
+  try {
+    const encoded = encodeURIComponent(text);
+    const intentUrl = 'intent://send#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=' + encoded + ';S.android.intent.extra.SUBJECT=' + encodeURIComponent(title) + ';end';
+    window.location.href = intentUrl;
+    return;
+  } catch(e){}
+
+  // Method 2: navigator.share (web browsers)
   if(navigator.share){
-    navigator.share({
-      title: n ? (n.title||'Nota') : 'FlowNotes',
-      text: text
-    }).catch(e=>{ if(e.name !== 'AbortError') toast('❌','No se pudo compartir'); });
-  } else {
-    // Fallback: copy to clipboard
-    copyToClipboard(text, '📋', 'Texto copiado — pégalo donde quieras imprimir');
+    navigator.share({ title: title, text: text })
+      .catch(e=>{ if(e.name !== 'AbortError') copyToClipboard(text,'📋','Texto copiado'); });
+    return;
   }
+
+  // Fallback: copy
+  copyToClipboard(text, '📋', 'Copiado — pégalo donde quieras imprimir');
 }
 
 // ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
