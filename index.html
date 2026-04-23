@@ -2953,75 +2953,74 @@ function printCurrentNote(){
 
   const notesToPrint = n ? [n] : notes;
 
-  // Build print content
-  let body = '';
+  // Build plain text for sharing
+  let text = '';
   notesToPrint.forEach(note=>{
-    body += '<div class="np">';
-    body += '<h1>' + (note.title||'Sin titulo') + '</h1>';
-    body += '<p class="meta">📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'});
-    if(note.tag) body += ' &nbsp;·&nbsp; ' + note.tag;
-    body += '</p>';
-    body += (note.content||'<p><em>Nota vacia</em></p>');
-    body += '</div>';
+    text += '📝 ' + (note.title||'Sin titulo') + '\n';
+    text += '📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '\n\n';
+    text += strip(note.content||'') + '\n\n---\n\n';
   });
 
-  const printCSS = [
-    '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-    'body{font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:20px;color:#111;font-size:13px;line-height:1.7}',
-    '.np{margin-bottom:40px;padding-bottom:30px;border-bottom:1px solid #ddd;page-break-inside:avoid}',
-    '.np:last-child{border-bottom:none}',
-    'h1{font-size:22px;color:#0d1b17;margin:0 0 6px;padding-bottom:8px;border-bottom:2px solid #00b894}',
-    '.meta{font-size:11px;color:#888;margin-bottom:16px}',
-    'img{max-width:100%;border-radius:6px;margin:6px 0;display:block}',
-    'audio{display:none}',
-    'a{color:#00b894;word-break:break-all}',
-    'blockquote{border-left:3px solid #00b894;padding-left:12px;color:#555;font-style:italic;margin:8px 0}',
-    'ul,ol{padding-left:20px}',
-    'input[type=checkbox]{margin-right:6px}',
-    '@page{margin:1.5cm}',
-    '@media print{body{padding:0}}'
-  ].join('');
+  // Build HTML blob for printing
+  const printCSS = 'body{font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:20px;color:#111;font-size:13px;line-height:1.7}' +
+    '.np{margin-bottom:40px;padding-bottom:30px;border-bottom:1px solid #ddd}' +
+    'h1{font-size:22px;color:#0d1b17;margin:0 0 6px;padding-bottom:8px;border-bottom:2px solid #00b894}' +
+    '.meta{font-size:11px;color:#888;margin-bottom:16px}' +
+    'img{max-width:100%}audio{display:none}' +
+    '@page{margin:1.5cm}@media print{body{padding:0}}';
 
-  // Inject a hidden print iframe and call window.print() on it
-  // This triggers the native print dialog directly on Android/iOS
-  let pf = document.getElementById('_pf');
-  if(pf) pf.remove();
-  pf = document.createElement('iframe');
-  pf.id = '_pf';
-  pf.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;background:#fff;';
-  document.body.appendChild(pf);
+  let htmlBody = '';
+  notesToPrint.forEach(note=>{
+    htmlBody += '<div class="np"><h1>' + (note.title||'Sin titulo') + '</h1>';
+    htmlBody += '<p class="meta">📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '</p>';
+    htmlBody += (note.content||'<p><em>Nota vacia</em></p>') + '</div>';
+  });
 
-  const doc = pf.contentDocument || pf.contentWindow.document;
-  doc.open();
-  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-  doc.write('<meta name="viewport" content="width=device-width,initial-scale=1">');
-  doc.write('<title>Imprimir - FlowNotes</title>');
-  doc.write('<style>' + printCSS + '</style>');
-  // Auto-print script inside iframe
-  doc.write('<script>');
-  doc.write('window.onload=function(){');
-  doc.write('  window.print();');
-  doc.write('  window.onafterprint=function(){ document.getElementById("_pf") && document.getElementById("_pf").remove(); };');
-  doc.write('};');
-  doc.write('<\/script>');
-  doc.write('</head><body>');
-  doc.write(body);
-  // Close button in case print dialog doesn't open
-  doc.write('<div style="position:fixed;top:12px;right:12px;z-index:9999">');
-  doc.write('<button onclick="window.print()" style="background:#00b894;color:#fff;border:none;border-radius:20px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;margin-right:8px">🖨️ Imprimir</button>');
-  doc.write('<button onclick="parent.closeprint()" style="background:#eee;color:#333;border:none;border-radius:20px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer">✕ Cerrar</button>');
-  doc.write('</div>');
-  doc.write('</body></html>');
-  doc.close();
+  const fullHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FlowNotes</title><style>' + printCSS + '</style></head><body>' + htmlBody + '</body></html>';
 
-  toast('🖨️', 'Abriendo impresión...');
+  // Try Web Share API with file (best for Android — shows printer option)
+  if(navigator.share){
+    const blob = new Blob([fullHTML], {type:'text/html'});
+    const file = new File([blob], 'FlowNotes.html', {type:'text/html'});
+    // Check if can share files
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({
+        files: [file],
+        title: n ? n.title : 'FlowNotes',
+      }).catch(e=>{ if(e.name!=='AbortError') shareFallback(text, fullHTML); });
+      return;
+    }
+    // Share as text
+    navigator.share({
+      title: n ? n.title : 'FlowNotes',
+      text: text
+    }).catch(e=>{ if(e.name!=='AbortError') shareFallback(text, fullHTML); });
+  } else {
+    shareFallback(text, fullHTML);
+  }
 }
 
-// Called from print iframe to close it
-window.closeprint = function(){
-  const pf = document.getElementById('_pf');
-  if(pf) pf.remove();
-};
+function shareFallback(text, html){
+  // Show options modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px';
+  card.innerHTML = '<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>' +
+    '<h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;text-align:center">🖨️ Imprimir / Compartir</h3>' +
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+    '<button id="print-copy-btn" style="padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer">📋 Copiar texto</button>' +
+    '<button id="print-close-btn" style="padding:12px;background:none;color:var(--ink3);border:none;font-family:var(--font);font-size:14px;cursor:pointer">Cancelar</button>' +
+    '</div>';
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  document.getElementById('print-copy-btn').onclick = ()=>{
+    copyToClipboard(text, '📋', 'Texto copiado — pégalo en Word, Drive o cualquier app para imprimir');
+    overlay.remove();
+  };
+  document.getElementById('print-close-btn').onclick = ()=> overlay.remove();
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
 
 // ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
 const sunSVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
@@ -3639,7 +3638,7 @@ function saveAlarm(){
 
   const datetime = new Date(dateVal + 'T' + timeVal);
   const now = new Date();
-  const minFuture = new Date(now.getTime() + 60000); // at least 1 minute ahead
+  const minFuture = new Date(now.getTime() + 60000);
   if(datetime < minFuture){ toast('❌','Elige al menos 1 minuto en el futuro'); return; }
 
   const n = notes.find(x=>x.id===alarmTargetId);
@@ -3649,33 +3648,57 @@ function saveAlarm(){
   saveNotes(); renderList();
   closeAlarmModal();
 
-  // Schedule alarm using setTimeout (works in all browsers without permissions)
   const msUntil = datetime - new Date();
-  if(msUntil > 0 && msUntil < 24 * 60 * 60 * 1000){ // within 24 hours
-    setTimeout(()=>{
-      const note = notes.find(x=>x.id===n.id);
-      if(!note || !note.alarm) return; // was removed
-      // Show in-app alert
-      showAlarmAlert(note);
-      delete note.alarm;
-      saveNotes(); renderList(); renderPriorityIcons();
-    }, msUntil);
-    toast('🔔','Recordatorio para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
-  } else if(msUntil >= 24 * 60 * 60 * 1000){
-    // More than 24h — try native notification
-    if('Notification' in window && Notification.permission === 'granted'){
-      scheduleAlarmCheck();
-      toast('🔔','Recordatorio guardado para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
-    } else if('Notification' in window){
-      Notification.requestPermission().then(perm=>{
-        if(perm==='granted') scheduleAlarmCheck();
-        toast('🔔','Recordatorio guardado para ' + datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}));
-      });
-    } else {
-      toast('🔔','Recordatorio guardado (manten la app abierta para recibir la alerta)');
-      scheduleAlarmCheck();
-    }
+  const timeStr = datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'});
+
+  // Request notification permission and schedule
+  if('Notification' in window){
+    Notification.requestPermission().then(perm=>{
+      if(perm === 'granted'){
+        // Schedule setTimeout for when app is open
+        if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
+        toast('🔔','Recordatorio para ' + timeStr + ' ✅');
+      } else {
+        // No permission — still use setTimeout with in-app alert
+        if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
+        toast('🔔','Recordatorio para ' + timeStr + ' (manten la app abierta)');
+      }
+    });
+  } else {
+    if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
+    toast('🔔','Recordatorio para ' + timeStr);
   }
+
+  // Always start interval check as backup
+  scheduleAlarmCheck();
+}
+
+function fireAlarm(noteId){
+  const note = notes.find(x=>x.id===noteId);
+  if(!note || !note.alarm) return;
+
+  // Try native notification first
+  if('Notification' in window && Notification.permission === 'granted'){
+    try {
+      const notif = new Notification('🔔 FlowNotes — Recordatorio', {
+        body: note.alarm.msg || note.title || 'Tienes un recordatorio',
+        icon: 'https://josead11.github.io/Flownote/icon.png',
+        tag: 'alarm-' + noteId,
+        requireInteraction: true
+      });
+      notif.onclick = ()=>{ window.focus(); openNote(noteId); notif.close(); };
+    } catch(e){}
+  }
+
+  // Always also show in-app alert (visible when app is open)
+  showAlarmAlert(note);
+
+  // Vibrate
+  if(navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+
+  // Clear the alarm
+  delete note.alarm;
+  saveNotes(); renderList(); renderPriorityIcons();
 }
 
 // Show in-app alarm alert
@@ -3728,6 +3751,11 @@ function checkAlarms(){
     if(!n.alarm) return;
     const alarmTime = new Date(n.alarm.datetime);
     const diff = alarmTime - now;
+    // Fire if within the check window (±35 seconds)
+    if(diff >= -35000 && diff <= 35000){
+      fireAlarm(n.id);
+      return;
+    }
     // Fire if within the last 30 seconds window
     if(diff >= -30000 && diff <= 30000){
       if(Notification.permission === 'granted'){
