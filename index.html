@@ -2953,73 +2953,24 @@ function printCurrentNote(){
 
   const notesToPrint = n ? [n] : notes;
 
-  // Build plain text for sharing
+  // Build plain text
   let text = '';
   notesToPrint.forEach(note=>{
-    text += '📝 ' + (note.title||'Sin titulo') + '\n';
-    text += '📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '\n\n';
+    text += (note.title||'Sin titulo') + '\n';
+    text += new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '\n\n';
     text += strip(note.content||'') + '\n\n---\n\n';
   });
 
-  // Build HTML blob for printing
-  const printCSS = 'body{font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:20px;color:#111;font-size:13px;line-height:1.7}' +
-    '.np{margin-bottom:40px;padding-bottom:30px;border-bottom:1px solid #ddd}' +
-    'h1{font-size:22px;color:#0d1b17;margin:0 0 6px;padding-bottom:8px;border-bottom:2px solid #00b894}' +
-    '.meta{font-size:11px;color:#888;margin-bottom:16px}' +
-    'img{max-width:100%}audio{display:none}' +
-    '@page{margin:1.5cm}@media print{body{padding:0}}';
-
-  let htmlBody = '';
-  notesToPrint.forEach(note=>{
-    htmlBody += '<div class="np"><h1>' + (note.title||'Sin titulo') + '</h1>';
-    htmlBody += '<p class="meta">📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '</p>';
-    htmlBody += (note.content||'<p><em>Nota vacia</em></p>') + '</div>';
-  });
-
-  const fullHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FlowNotes</title><style>' + printCSS + '</style></head><body>' + htmlBody + '</body></html>';
-
-  // Try Web Share API with file (best for Android — shows printer option)
+  // Use navigator.share — this opens Android share sheet with Imprimir option
   if(navigator.share){
-    const blob = new Blob([fullHTML], {type:'text/html'});
-    const file = new File([blob], 'FlowNotes.html', {type:'text/html'});
-    // Check if can share files
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({
-        files: [file],
-        title: n ? n.title : 'FlowNotes',
-      }).catch(e=>{ if(e.name!=='AbortError') shareFallback(text, fullHTML); });
-      return;
-    }
-    // Share as text
     navigator.share({
-      title: n ? n.title : 'FlowNotes',
+      title: n ? (n.title||'Nota') : 'FlowNotes',
       text: text
-    }).catch(e=>{ if(e.name!=='AbortError') shareFallback(text, fullHTML); });
+    }).catch(e=>{ if(e.name !== 'AbortError') toast('❌','No se pudo compartir'); });
   } else {
-    shareFallback(text, fullHTML);
+    // Fallback: copy to clipboard
+    copyToClipboard(text, '📋', 'Texto copiado — pégalo donde quieras imprimir');
   }
-}
-
-function shareFallback(text, html){
-  // Show options modal
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
-  const card = document.createElement('div');
-  card.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px';
-  card.innerHTML = '<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>' +
-    '<h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;text-align:center">🖨️ Imprimir / Compartir</h3>' +
-    '<div style="display:flex;flex-direction:column;gap:10px">' +
-    '<button id="print-copy-btn" style="padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer">📋 Copiar texto</button>' +
-    '<button id="print-close-btn" style="padding:12px;background:none;color:var(--ink3);border:none;font-family:var(--font);font-size:14px;cursor:pointer">Cancelar</button>' +
-    '</div>';
-  overlay.appendChild(card);
-  document.body.appendChild(overlay);
-  document.getElementById('print-copy-btn').onclick = ()=>{
-    copyToClipboard(text, '📋', 'Texto copiado — pégalo en Word, Drive o cualquier app para imprimir');
-    overlay.remove();
-  };
-  document.getElementById('print-close-btn').onclick = ()=> overlay.remove();
-  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 }
 
 // ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
