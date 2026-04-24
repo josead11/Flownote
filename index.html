@@ -526,19 +526,7 @@ body.dark #panel-bottom-bar button:hover { background:#1e3530; }
 }
 #fab:hover { background:var(--teal-d); }
 
-/* Alarm modal */
-#alarm-card {
-  background:var(--surface); border-radius:24px 24px 0 0;
-  width:100%; max-width:480px; padding:20px 20px 32px;
-  animation:slideUp 0.3s cubic-bezier(.16,1,.3,1);
-}
-body.dark #alarm-card { background:var(--surface); }
-body.dark #alarm-date, body.dark #alarm-time, body.dark #alarm-msg {
-  background:var(--surface); border-color:var(--border); color:var(--ink);
-}
 
-/* Note alarm badge in list */
-.ni-alarm { font-size:11px; color:var(--teal); font-weight:600; }
 
 /* Color picker */
 #color-card {
@@ -1442,29 +1430,6 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
   </div>
 </div>
 
-<!-- ALARM MODAL -->
-<div id="alarm-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center;z-index:4000;backdrop-filter:blur(4px)">
-  <div id="alarm-card">
-    <div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 16px"></div>
-    <h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">🔔 Recordatorio</h3>
-    <p style="font-size:13px;color:var(--ink3);margin-bottom:16px" id="alarm-note-name">Para: sin titulo</p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Fecha</label>
-      <input type="date" id="alarm-date" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
-      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Hora</label>
-      <input type="time" id="alarm-time" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
-      <label style="font-size:12px;font-weight:700;color:var(--ink2)">Mensaje (opcional)</label>
-      <input type="text" id="alarm-msg" placeholder="Ej: Revisar esta nota" style="border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);outline:none;width:100%">
-    </div>
-    <div id="alarm-existing" style="display:none;background:var(--teal-l);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--teal-d)"></div>
-    <div style="display:flex;gap:8px">
-      <button onclick="closeAlarmModal()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font-family:var(--font);font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer">Cancelar</button>
-      <button id="alarm-remove-btn" onclick="removeAlarm()" style="display:none;flex:1;padding:12px;border:none;border-radius:12px;background:#ffeaea;font-family:var(--font);font-size:14px;font-weight:600;color:#c62828;cursor:pointer">🗑️ Quitar</button>
-      <button onclick="saveAlarm()" style="flex:1;padding:12px;border:none;border-radius:12px;background:var(--teal);font-family:var(--font);font-size:14px;font-weight:700;color:#fff;cursor:pointer">✅ Guardar</button>
-    </div>
-  </div>
-</div>
-
 <!-- COLOR PICKER MODAL -->
 <div id="color-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;justify-content:center;z-index:4000;backdrop-filter:blur(6px)">
   <div id="color-card">
@@ -1675,7 +1640,7 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
   <div id="ctx-note-label"></div>
   <button onclick="ctxPin()">📌 <span id="ctx-pin-lbl">Fijar nota</span></button>
   <button onclick="ctxTogglePriority()">⭐ <span id="ctx-priority-lbl">Marcar prioritaria</span></button>
-  <button onclick="ctxSetAlarm()">🔔 Agregar recordatorio</button>
+
   <button onclick="ctxLockNote()">🔒 <span id="ctx-lock-lbl">Bloquear con PIN</span></button>
   <button onclick="ctxPrint()">🖨️ Imprimir nota</button>
   <button onclick="ctxDupe()">📄 Duplicar</button>
@@ -2107,7 +2072,7 @@ function renderList(filter, q){
       <div class="ni-preview">${esc(strip(n.content)).slice(0,65)||'Nota vacia'}</div>
       <div class="ni-meta">
         <span class="ni-date">${fmtDate(n.created)}</span>
-        ${n.alarm ? '<span class="ni-alarm">🔔 ' + new Date(n.alarm.datetime).toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'}) + '</span>' : ''}
+
         ${n.tag?`<span class="ni-tag tag-${n.tag.toLowerCase()}">${n.tag}</span>`:''}
       </div>
     </div>`).join('');
@@ -3539,302 +3504,6 @@ function renderPriorityIcons(){
       <div class="prio-icon-name">${esc(n.title)||'Sin titulo'}</div>
     </div>`).join('');
 }
-
-// ══════════ RECORDATORIOS / ALARMAS ══════════════════════════════════════
-let alarmCheckInterval = null;
-let alarmTargetId = null;
-
-function ctxSetAlarm(){
-  hideCtx();
-  alarmTargetId = ctxTargetId;
-  openAlarmModal(ctxTargetId);
-}
-
-function openAlarmModal(id){
-  alarmTargetId = id;
-  const n = notes.find(x=>x.id===id);
-  if(!n) return;
-
-  // Set note name
-  const nameEl = document.getElementById('alarm-note-name');
-  if(nameEl) nameEl.textContent = 'Para: ' + (n.title || 'Sin titulo');
-
-  // Pre-fill if alarm exists
-  const existingEl = document.getElementById('alarm-existing');
-  const removeBtn = document.getElementById('alarm-remove-btn');
-  if(n.alarm){
-    const d = new Date(n.alarm.datetime);
-    document.getElementById('alarm-date').value = d.toISOString().split('T')[0];
-    document.getElementById('alarm-time').value = d.toTimeString().slice(0,5);
-    document.getElementById('alarm-msg').value = n.alarm.msg || '';
-    if(existingEl){ existingEl.style.display='block'; existingEl.textContent = '🔔 Recordatorio activo: ' + d.toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}); }
-    if(removeBtn) removeBtn.style.display='block';
-  } else {
-    // Default: current time
-    const now = new Date();
-    document.getElementById('alarm-date').value = now.toISOString().split('T')[0];
-    document.getElementById('alarm-time').value = now.toTimeString().slice(0,5);
-    document.getElementById('alarm-msg').value = '';
-    if(existingEl) existingEl.style.display='none';
-    if(removeBtn) removeBtn.style.display='none';
-  }
-
-  document.getElementById('alarm-modal').style.display = 'flex';
-}
-
-function closeAlarmModal(){
-  document.getElementById('alarm-modal').style.display = 'none';
-  alarmTargetId = null;
-}
-
-function saveAlarm(){
-  const dateVal = document.getElementById('alarm-date').value;
-  const timeVal = document.getElementById('alarm-time').value;
-  const msg = document.getElementById('alarm-msg').value.trim();
-
-  if(!dateVal || !timeVal){ toast('❌','Elige fecha y hora'); return; }
-
-  const datetime = new Date(dateVal + 'T' + timeVal);
-  if(isNaN(datetime.getTime())){ toast('❌','Fecha u hora inválida'); return; }
-
-  const n = notes.find(x=>x.id===alarmTargetId);
-  if(!n){ closeAlarmModal(); return; }
-
-  n.alarm = { datetime: datetime.toISOString(), msg: msg || n.title || 'Recordatorio' };
-  saveNotes(); renderList();
-  closeAlarmModal();
-
-  const alarmMsg = msg || n.title || 'Recordatorio de FlowNotes';
-  const timeStr = datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'});
-
-  // Method 1: Android Clock Intent — sets alarm in the system clock app
-  // This works 100% in APK even when app is closed
-  try {
-    const hour = datetime.getHours();
-    const minutes = datetime.getMinutes();
-    const intentUrl = 'intent://alarm#Intent;action=android.intent.action.SET_ALARM;' +
-      'i.android.intent.extra.alarm.HOUR=' + hour + ';' +
-      'i.android.intent.extra.alarm.MINUTES=' + minutes + ';' +
-      'S.android.intent.extra.alarm.MESSAGE=' + encodeURIComponent(alarmMsg) + ';' +
-      'b.android.intent.extra.alarm.SKIP_UI=false;' +
-      'end';
-    window.location.href = intentUrl;
-    toast('🔔','Alarma configurada para las ' + timeStr);
-    return;
-  } catch(e){ console.log('Intent alarm failed:', e); }
-
-  // Method 2: Fallback — setTimeout + in-app alert (only works while app is open)
-  const msUntil = datetime - new Date();
-  if(msUntil > 0){
-    setTimeout(()=> fireAlarm(n.id), msUntil);
-    toast('🔔','Recordatorio para ' + timeStr + ' (manten la app abierta)');
-  }
-
-  scheduleAlarmCheck();
-}
-
-function fireAlarm(noteId){
-  const note = notes.find(x=>x.id===noteId);
-  if(!note || !note.alarm) return;
-
-  // Try native notification first
-  if('Notification' in window && Notification.permission === 'granted'){
-    try {
-      const notif = new Notification('🔔 FlowNotes — Recordatorio', {
-        body: note.alarm.msg || note.title || 'Tienes un recordatorio',
-        icon: 'https://josead11.github.io/Flownote/icon.png',
-        tag: 'alarm-' + noteId,
-        requireInteraction: true
-      });
-      notif.onclick = ()=>{ window.focus(); openNote(noteId); notif.close(); };
-    } catch(e){}
-  }
-
-  // Always also show in-app alert (visible when app is open)
-  showAlarmAlert(note);
-
-  // Vibrate
-  if(navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-
-  // Clear the alarm
-  delete note.alarm;
-  saveNotes(); renderList(); renderPriorityIcons();
-}
-
-// Show in-app alarm alert
-function showAlarmAlert(n){
-  // Create a visible alert modal
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = 'Cerrar';
-  closeBtn.style.cssText = 'flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;color:var(--ink2)';
-  closeBtn.onclick = ()=>overlay.remove();
-
-  const openBtn = document.createElement('button');
-  openBtn.textContent = 'Ver nota';
-  openBtn.style.cssText = 'flex:1;padding:12px;border:none;border-radius:12px;background:var(--teal);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;color:#fff';
-  openBtn.onclick = ()=>{ openNote(n.id); overlay.remove(); };
-
-  const btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:10px';
-  btnRow.appendChild(closeBtn); btnRow.appendChild(openBtn);
-
-  const card = document.createElement('div');
-  card.style.cssText = 'background:var(--surface);border-radius:24px;padding:32px 28px;max-width:340px;width:90%;text-align:center';
-  card.innerHTML = '<div style="font-size:48px;margin-bottom:12px">🔔</div>' +
-    '<h3 style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px">Recordatorio</h3>' +
-    '<p style="font-size:15px;color:var(--ink2);margin-bottom:20px">' + esc(n.alarm.msg||n.title||'Tienes un recordatorio') + '</p>';
-  card.appendChild(btnRow);
-  overlay.appendChild(card);
-  document.body.appendChild(overlay);
-  // Vibrate if available
-  if(navigator.vibrate) navigator.vibrate([300,100,300]);
-}
-
-function removeAlarm(){
-  const n = notes.find(x=>x.id===alarmTargetId);
-  if(n){ delete n.alarm; saveNotes(); renderList(); }
-  closeAlarmModal();
-  toast('🔕','Recordatorio eliminado');
-}
-
-function scheduleAlarmCheck(){
-  if(alarmCheckInterval) return;
-  alarmCheckInterval = setInterval(checkAlarms, 30000); // check every 30s
-  checkAlarms(); // check immediately
-}
-
-function checkAlarms(){
-  const now = new Date();
-  notes.forEach(n=>{
-    if(!n.alarm) return;
-    const alarmTime = new Date(n.alarm.datetime);
-    const diff = alarmTime - now;
-    // Fire if within the check window (±35 seconds)
-    if(diff >= -35000 && diff <= 35000){
-      fireAlarm(n.id);
-      return;
-    }
-    // Fire if within the last 30 seconds window
-    if(diff >= -30000 && diff <= 30000){
-      if(Notification.permission === 'granted'){
-        const notif = new Notification('🔔 FlowNotes', {
-          body: n.alarm.msg || n.title || 'Tienes un recordatorio',
-          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">📝</text></svg>'
-        });
-        notif.onclick = ()=>{ window.focus(); openNote(n.id); };
-      } else {
-        toast('🔔', n.alarm.msg || n.title || 'Recordatorio');
-      }
-      // Remove alarm after firing
-      delete n.alarm;
-      saveNotes(); renderList();
-    }
-  });
-}
-
-function ctxTogglePriority(){
-  hideCtx();
-  const n = notes.find(x=>x.id===ctxTargetId);
-  if(!n) return;
-  n.pinned = !n.pinned;
-  saveNotes(); renderList(); renderPriorityIcons();
-  toast('⭐', n.pinned ? 'Marcada como prioritaria' : 'Quitada de prioritarias');
-}
-
-// Start alarm checker if there are any alarms saved
-document.addEventListener('DOMContentLoaded', ()=>{
-  const hasAlarms = notes && notes.some(n=>n.alarm);
-  if(hasAlarms && 'Notification' in window && Notification.permission === 'granted'){
-    scheduleAlarmCheck();
-  }
-});
-
-// ══════════ COLOR PICKER ═════════════════════════════════════════════════
-const THEME_COLORS = [
-  {name:'Verde esmeralda', teal:'#00b894', dark:'#00836b', light:'#e0f7f2'},
-  {name:'Aguamarina',      teal:'#00cec9', dark:'#009e9b', light:'#e0f9f9'},
-  {name:'Azul oceano',     teal:'#0984e3', dark:'#0668b3', light:'#e3f2ff'},
-  {name:'Azul rey',        teal:'#2d6af6', dark:'#1a4fd4', light:'#e8edff'},
-  {name:'Violeta',         teal:'#6c5ce7', dark:'#4f3ec8', light:'#f0eeff'},
-  {name:'Purpura',         teal:'#a855f7', dark:'#7c3aed', light:'#f5f0ff'},
-  {name:'Rosa fuerte',     teal:'#e84393', dark:'#c2186e', light:'#ffe8f4'},
-  {name:'Coral',           teal:'#e17055', dark:'#b85a3c', light:'#fff0eb'},
-  {name:'Naranja',         teal:'#f39c12', dark:'#c47d0e', light:'#fff8e1'},
-  {name:'Amarillo',        teal:'#fdcb6e', dark:'#e0a800', light:'#fffae0'},
-  {name:'Lima',            teal:'#55efc4', dark:'#00b894', light:'#e0fff6'},
-  {name:'Verde bosque',    teal:'#2ecc71', dark:'#27ae60', light:'#e8faf0'},
-  {name:'Cian',            teal:'#00b4d8', dark:'#0077b6', light:'#e0f7ff'},
-  {name:'Indigo',          teal:'#4361ee', dark:'#3a0ca3', light:'#eef0ff'},
-  {name:'Magenta',         teal:'#f72585', dark:'#c01f6d', light:'#ffe0f0'},
-  {name:'Salmon',          teal:'#ff6b6b', dark:'#ee5a24', light:'#fff0f0'},
-  {name:'Dorado',          teal:'#e9c46a', dark:'#c49a2a', light:'#fdf8e1'},
-  {name:'Tierra',          teal:'#b5838d', dark:'#8a5a63', light:'#f9f0f1'},
-  {name:'Gris azulado',    teal:'#6c757d', dark:'#495057', light:'#f0f2f4'},
-  {name:'Carbon',          teal:'#2d3436', dark:'#1a1f20', light:'#eaecee'},
-];
-
-function openColorPicker(){
-  const modal = document.getElementById('color-modal');
-  const grid = document.getElementById('color-grid');
-  const darkToggle = document.getElementById('color-dark-toggle');
-
-  // Sync dark toggle
-  if(darkToggle) darkToggle.checked = document.body.classList.contains('dark');
-
-  // Build swatches
-  const currentTeal = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim();
-  grid.innerHTML = THEME_COLORS.map((c,i) => `
-    <div class="color-swatch ${c.teal.toLowerCase() === currentTeal.toLowerCase() ? 'active' : ''}"
-      style="background:${c.teal}"
-      onclick="applyThemeColor(${i})"
-      title="${c.name}">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
-        <polyline points="20,6 9,17 4,12"/>
-      </svg>
-    </div>`).join('');
-
-  modal.style.display = 'flex';
-}
-
-function applyThemeColor(index){
-  const c = THEME_COLORS[index];
-  const root = document.documentElement;
-  root.style.setProperty('--teal', c.teal);
-  root.style.setProperty('--teal-d', c.dark);
-  root.style.setProperty('--teal-l', c.light);
-
-  // Save to localStorage
-  localStorage.setItem('fn_theme_color', JSON.stringify(c));
-
-  // Update active swatch
-  document.querySelectorAll('.color-swatch').forEach((s,i) => {
-    s.classList.toggle('active', i === index);
-  });
-
-  toast('🎨', c.name + ' aplicado');
-}
-
-// Apply saved color on load
-(function(){
-  const saved = localStorage.getItem('fn_theme_color');
-  if(saved){
-    try {
-      const c = JSON.parse(saved);
-      const root = document.documentElement;
-      root.style.setProperty('--teal', c.teal);
-      root.style.setProperty('--teal-d', c.dark);
-      root.style.setProperty('--teal-l', c.light);
-    } catch(e){}
-  }
-})();
-
-// Close on overlay click
-document.addEventListener('DOMContentLoaded', ()=>{
-  const cm = document.getElementById('color-modal');
-  if(cm) cm.addEventListener('click', e=>{ if(e.target===cm) cm.style.display='none'; });
-});
 
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
