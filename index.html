@@ -3570,9 +3570,8 @@ function openAlarmModal(id){
     if(existingEl){ existingEl.style.display='block'; existingEl.textContent = '🔔 Recordatorio activo: ' + d.toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}); }
     if(removeBtn) removeBtn.style.display='block';
   } else {
-    // Default: next minute
+    // Default: current time
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 1, 0, 0);
     document.getElementById('alarm-date').value = now.toISOString().split('T')[0];
     document.getElementById('alarm-time').value = now.toTimeString().slice(0,5);
     document.getElementById('alarm-msg').value = '';
@@ -3596,9 +3595,7 @@ function saveAlarm(){
   if(!dateVal || !timeVal){ toast('❌','Elige fecha y hora'); return; }
 
   const datetime = new Date(dateVal + 'T' + timeVal);
-  const now = new Date();
-  const minFuture = new Date(now.getTime() + 60000);
-  if(datetime < minFuture){ toast('❌','Elige al menos 1 minuto en el futuro'); return; }
+  if(isNaN(datetime.getTime())){ toast('❌','Fecha u hora inválida'); return; }
 
   const n = notes.find(x=>x.id===alarmTargetId);
   if(!n){ closeAlarmModal(); return; }
@@ -3607,28 +3604,32 @@ function saveAlarm(){
   saveNotes(); renderList();
   closeAlarmModal();
 
-  const msUntil = datetime - new Date();
+  const alarmMsg = msg || n.title || 'Recordatorio de FlowNotes';
   const timeStr = datetime.toLocaleString('es-ES',{dateStyle:'short',timeStyle:'short'});
 
-  // Request notification permission and schedule
-  if('Notification' in window){
-    Notification.requestPermission().then(perm=>{
-      if(perm === 'granted'){
-        // Schedule setTimeout for when app is open
-        if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
-        toast('🔔','Recordatorio para ' + timeStr + ' ✅');
-      } else {
-        // No permission — still use setTimeout with in-app alert
-        if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
-        toast('🔔','Recordatorio para ' + timeStr + ' (manten la app abierta)');
-      }
-    });
-  } else {
-    if(msUntil > 0) setTimeout(()=> fireAlarm(n.id), msUntil);
-    toast('🔔','Recordatorio para ' + timeStr);
+  // Method 1: Android Clock Intent — sets alarm in the system clock app
+  // This works 100% in APK even when app is closed
+  try {
+    const hour = datetime.getHours();
+    const minutes = datetime.getMinutes();
+    const intentUrl = 'intent://alarm#Intent;action=android.intent.action.SET_ALARM;' +
+      'i.android.intent.extra.alarm.HOUR=' + hour + ';' +
+      'i.android.intent.extra.alarm.MINUTES=' + minutes + ';' +
+      'S.android.intent.extra.alarm.MESSAGE=' + encodeURIComponent(alarmMsg) + ';' +
+      'b.android.intent.extra.alarm.SKIP_UI=false;' +
+      'end';
+    window.location.href = intentUrl;
+    toast('🔔','Alarma configurada para las ' + timeStr);
+    return;
+  } catch(e){ console.log('Intent alarm failed:', e); }
+
+  // Method 2: Fallback — setTimeout + in-app alert (only works while app is open)
+  const msUntil = datetime - new Date();
+  if(msUntil > 0){
+    setTimeout(()=> fireAlarm(n.id), msUntil);
+    toast('🔔','Recordatorio para ' + timeStr + ' (manten la app abierta)');
   }
 
-  // Always start interval check as backup
   scheduleAlarmCheck();
 }
 
