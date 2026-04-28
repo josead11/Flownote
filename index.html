@@ -3505,6 +3505,87 @@ function renderPriorityIcons(){
     </div>`).join('');
 }
 
+// ══════════ COLOR PICKER ═════════════════════════════════════════════════
+const THEME_COLORS = [
+  {name:'Verde esmeralda', teal:'#00b894', dark:'#00836b', light:'#e0f7f2'},
+  {name:'Aguamarina',      teal:'#00cec9', dark:'#009e9b', light:'#e0f9f9'},
+  {name:'Azul oceano',     teal:'#0984e3', dark:'#0668b3', light:'#e3f2ff'},
+  {name:'Azul rey',        teal:'#2d6af6', dark:'#1a4fd4', light:'#e8edff'},
+  {name:'Violeta',         teal:'#6c5ce7', dark:'#4f3ec8', light:'#f0eeff'},
+  {name:'Purpura',         teal:'#a855f7', dark:'#7c3aed', light:'#f5f0ff'},
+  {name:'Rosa',            teal:'#e84393', dark:'#c2186e', light:'#ffe8f4'},
+  {name:'Coral',           teal:'#e17055', dark:'#b85a3c', light:'#fff0eb'},
+  {name:'Naranja',         teal:'#f39c12', dark:'#c47d0e', light:'#fff8e1'},
+  {name:'Amarillo',        teal:'#fdcb6e', dark:'#e0a800', light:'#fffae0'},
+  {name:'Lima',            teal:'#55efc4', dark:'#00b894', light:'#e0fff6'},
+  {name:'Verde bosque',    teal:'#2ecc71', dark:'#27ae60', light:'#e8faf0'},
+  {name:'Cian',            teal:'#00b4d8', dark:'#0077b6', light:'#e0f7ff'},
+  {name:'Indigo',          teal:'#4361ee', dark:'#3a0ca3', light:'#eef0ff'},
+  {name:'Magenta',         teal:'#f72585', dark:'#c01f6d', light:'#ffe0f0'},
+  {name:'Salmon',          teal:'#ff6b6b', dark:'#ee5a24', light:'#fff0f0'},
+  {name:'Dorado',          teal:'#e9c46a', dark:'#c49a2a', light:'#fdf8e1'},
+  {name:'Tierra',          teal:'#b5838d', dark:'#8a5a63', light:'#f9f0f1'},
+  {name:'Gris azulado',    teal:'#6c757d', dark:'#495057', light:'#f0f2f4'},
+  {name:'Carbon',          teal:'#2d3436', dark:'#1a1f20', light:'#eaecee'},
+];
+
+function openColorPicker(){
+  const modal = document.getElementById('color-modal');
+  if(!modal) return;
+  const grid = document.getElementById('color-grid');
+  const darkToggle = document.getElementById('color-dark-toggle');
+
+  if(darkToggle) darkToggle.checked = document.body.classList.contains('dark');
+
+  const currentTeal = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim();
+  if(grid){
+    grid.innerHTML = THEME_COLORS.map((c,i) => `
+      <div class="color-swatch ${c.teal.toLowerCase() === currentTeal.toLowerCase() ? 'active' : ''}"
+        style="background:${c.teal}"
+        onclick="applyThemeColor(${i})"
+        title="${c.name}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <polyline points="20,6 9,17 4,12"/>
+        </svg>
+      </div>`).join('');
+  }
+
+  modal.style.display = 'flex';
+}
+
+function applyThemeColor(index){
+  const c = THEME_COLORS[index];
+  const root = document.documentElement;
+  root.style.setProperty('--teal', c.teal);
+  root.style.setProperty('--teal-d', c.dark);
+  root.style.setProperty('--teal-l', c.light);
+  localStorage.setItem('fn_theme_color', JSON.stringify(c));
+  document.querySelectorAll('.color-swatch').forEach((s,i) => {
+    s.classList.toggle('active', i === index);
+  });
+  toast('🎨', c.name + ' aplicado');
+}
+
+// Apply saved color on load
+(function(){
+  const saved = localStorage.getItem('fn_theme_color');
+  if(saved){
+    try {
+      const c = JSON.parse(saved);
+      const root = document.documentElement;
+      root.style.setProperty('--teal', c.teal);
+      root.style.setProperty('--teal-d', c.dark);
+      root.style.setProperty('--teal-l', c.light);
+    } catch(e){}
+  }
+})();
+
+// Close color modal on overlay click
+document.addEventListener('DOMContentLoaded', ()=>{
+  const cm = document.getElementById('color-modal');
+  if(cm) cm.addEventListener('click', e=>{ if(e.target===cm) cm.style.display='none'; });
+});
+
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
