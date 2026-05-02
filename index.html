@@ -2916,34 +2916,123 @@ function printCurrentNote(){
   const n = currentId ? notes.find(x=>x.id===currentId) : null;
   if(!n && !notes.length){ toast('❌','No hay notas para imprimir'); return; }
 
-  const notesToPrint = n ? [n] : notes;
+  // Show options modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:24px 20px 32px';
+  card.innerHTML =
+    '<div style="width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px"></div>' +
+    '<h3 style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;text-align:center">🖨️ Imprimir / Exportar</h3>' +
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+    '<button id="btn-pdf" style="padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer">📄 Descargar PDF</button>' +
+    '<button id="btn-share-print" style="padding:14px;background:var(--bg);color:var(--ink);border:1px solid var(--border);border-radius:14px;font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer">📤 Compartir / Imprimir</button>' +
+    '<button id="btn-cancel-print" style="padding:12px;background:none;color:var(--ink3);border:none;font-family:var(--font);font-size:14px;cursor:pointer">Cancelar</button>' +
+    '</div>';
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
 
-  let text = '';
+  document.getElementById('btn-pdf').onclick = ()=>{
+    overlay.remove();
+    generatePDF(n);
+  };
+
+  document.getElementById('btn-share-print').onclick = ()=>{
+    overlay.remove();
+    sharePrint(n);
+  };
+
+  document.getElementById('btn-cancel-print').onclick = ()=> overlay.remove();
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function generatePDF(n){
+  const notesToPrint = n ? [n] : notes;
+  toast('📄','Generando PDF...');
+
+  // Build HTML content
+  const printCSS = [
+    'body{font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:24px;color:#111;font-size:13px;line-height:1.7}',
+    '.note{margin-bottom:36px;padding-bottom:28px;border-bottom:2px solid #eee}',
+    '.note:last-child{border-bottom:none}',
+    'h1{font-size:20px;color:#0d1b17;margin:0 0 6px;padding-bottom:8px;border-bottom:2px solid #00b894}',
+    '.meta{font-size:11px;color:#888;margin-bottom:14px}',
+    'img{max-width:100%;border-radius:6px;margin:6px 0;display:block}',
+    'audio{display:none}',
+    'blockquote{border-left:3px solid #00b894;padding-left:12px;color:#555;margin:8px 0}',
+    '.header{text-align:center;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #00b894}',
+    '.header h2{color:#00b894;font-size:22px;margin:0}',
+    '.header p{color:#888;font-size:12px;margin:4px 0 0}',
+  ].join('');
+
+  let body = '<div class="header"><h2>📝 FlowNotes</h2><p>Exportado el ' +
+    new Date().toLocaleDateString('es-ES',{dateStyle:'long'}) + '</p></div>';
+
   notesToPrint.forEach(note=>{
-    text += (note.title||'Sin titulo') + '\n';
-    text += new Date(note.created).toLocaleString('es-ES',{dateStyle:'long',timeStyle:'short'}) + '\n\n';
-    text += strip(note.content||'') + '\n\n---\n\n';
+    body += '<div class="note">';
+    body += '<h1>' + esc(note.title||'Sin titulo') + '</h1>';
+    body += '<p class="meta">📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'});
+    if(note.tag) body += ' &nbsp;·&nbsp; ' + note.tag;
+    body += '</p>';
+    body += (note.content || '<p><em>Nota vacía</em></p>');
+    body += '</div>';
   });
 
-  const title = n ? (n.title||'Nota') : 'FlowNotes';
+  const fullHTML = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FlowNotes</title><style>' + printCSS + '</style></head><body>' + body + '</body></html>';
 
-  // Method 1: Android Intent URI — works in APK/WebView
-  try {
-    const encoded = encodeURIComponent(text);
-    const intentUrl = 'intent://send#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=' + encoded + ';S.android.intent.extra.SUBJECT=' + encodeURIComponent(title) + ';end';
-    window.location.href = intentUrl;
-    return;
-  } catch(e){}
+  // Open in new tab/window and trigger print dialog (generates PDF)
+  const blob = new Blob([fullHTML], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
 
-  // Method 2: navigator.share (web browsers)
-  if(navigator.share){
-    navigator.share({ title: title, text: text })
-      .catch(e=>{ if(e.name !== 'AbortError') copyToClipboard(text,'📋','Texto copiado'); });
-    return;
+  // Try to open and auto-print (works in browser)
+  const win = window.open(url, '_blank');
+  if(win){
+    win.onload = ()=>{
+      win.print();
+      setTimeout(()=> URL.revokeObjectURL(url), 10000);
+    };
+    toast('🖨️','Usa "Guardar como PDF" en el diálogo de impresión');
+  } else {
+    // APK fallback: share as HTML file
+    const file = new File([fullHTML], 'FlowNotes.html', {type:'text/html'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:'FlowNotes PDF'})
+        .then(()=> URL.revokeObjectURL(url))
+        .catch(()=> sharePrintText(notesToPrint));
+    } else {
+      // Last resort: share the blob URL
+      const intentUrl = 'intent://send#Intent;action=android.intent.action.SEND;type=text/html;S.android.intent.extra.SUBJECT=FlowNotes;end';
+      window.location.href = intentUrl;
+    }
   }
+}
 
-  // Fallback: copy
-  copyToClipboard(text, '📋', 'Copiado — pégalo donde quieras imprimir');
+function sharePrint(n){
+  const notesToPrint = n ? [n] : notes;
+  sharePrintText(notesToPrint);
+}
+
+function sharePrintText(notesToPrint){
+  let text = 'FlowNotes\n' + '='.repeat(30) + '\n\n';
+  notesToPrint.forEach(note=>{
+    text += '📝 ' + (note.title||'Sin titulo') + '\n';
+    text += '📅 ' + new Date(note.created).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}) + '\n\n';
+    text += strip(note.content||'') + '\n\n' + '-'.repeat(30) + '\n\n';
+  });
+
+  const title = notesToPrint.length===1 ? (notesToPrint[0].title||'Nota') : 'FlowNotes';
+
+  // Android Intent — opens share sheet with Imprimir option
+  const encoded = encodeURIComponent(text);
+  const intentUrl = 'intent://send#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=' + encoded + ';S.android.intent.extra.SUBJECT=' + encodeURIComponent(title) + ';end';
+  window.location.href = intentUrl;
+
+  // Fallback for web
+  setTimeout(()=>{
+    if(navigator.share){
+      navigator.share({title, text}).catch(()=>{});
+    }
+  }, 500);
 }
 
 // ══════════ TEMA OSCURO ═══════════════════════════════════════════════════
