@@ -406,18 +406,25 @@ body.dark .gm-loading { background:#1a2e28; }
 .add-event-wrap button:hover { background:var(--teal-d); }
 
 /* ══════════ CALCULATOR ══════════ */
-#calculator { padding:12px; flex:1; display:flex; flex-direction:column; }
-#calc-display { background:var(--ink); border-radius:14px; padding:14px 14px 10px; margin-bottom:10px; text-align:right; }
+#calculator { padding:10px; flex:1; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+#calc-display { background:var(--ink); border-radius:14px; padding:14px 14px 10px; text-align:right; flex-shrink:0; }
 #calc-expr { font-size:11px; color:rgba(255,255,255,0.35); min-height:14px; margin-bottom:4px; }
-#calc-result { font-size:30px; font-weight:300; color:#fff; letter-spacing:-1px; word-break:break-all; }
-#calc-keys { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-.ck { padding:13px 0; border:none; border-radius:11px; font-family:var(--font); font-size:15px; font-weight:600; cursor:pointer; background:var(--bg); color:var(--ink); transition:all 0.1s; }
+#calc-result { font-size:28px; font-weight:300; color:#fff; letter-spacing:-1px; word-break:break-all; }
+#calc-mode-btns { display:flex; gap:4px; background:var(--bg); border-radius:10px; padding:3px; flex-shrink:0; }
+.calc-mode-btn { flex:1; padding:6px; border:none; background:none; border-radius:8px; font-family:var(--font); font-size:12px; font-weight:600; color:var(--ink3); cursor:pointer; transition:all 0.15s; }
+.calc-mode-btn.active { background:var(--surface); color:var(--teal); box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+#calc-keys { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; flex-shrink:0; }
+#calc-sci-keys { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; flex-shrink:0; }
+.ck { height:44px; border:none; border-radius:11px; font-family:var(--font); font-size:15px; font-weight:600; cursor:pointer; background:var(--bg); color:var(--ink); transition:all 0.1s; }
 .ck:hover { filter:brightness(0.93); }
 .ck:active { transform:scale(0.93); }
 .ck.op { background:#e0e0e0; color:var(--ink2); }
 .ck.fn { background:var(--teal); color:#fff; }
-.ck.eq { background:var(--teal-d); color:#fff; }
-.ck.wide { grid-column:span 2; text-align:left; padding-left:20px; }
+.ck.eq { background:var(--teal-d); color:#fff; font-size:18px; }
+.ck.wide { grid-column:span 2; }
+.ck.sci { height:38px; font-size:12px; font-weight:600; background:rgba(0,184,148,0.12); color:var(--teal); border-radius:8px; }
+.ck.sci:active { transform:scale(0.92); }
+body.dark .ck.op { background:#2a4040; color:var(--ink2); }
 
 /* ══════════ NOTES PANEL ══════════ */
 #notes-count { font-size:11px; color:var(--ink3); }
@@ -644,25 +651,22 @@ select.tb-sel {
   padding:8px 22px; font-family:var(--font); font-size:13px; font-weight:700; cursor:pointer; transition:all 0.15s;
 }
 #save-btn:hover { background:var(--teal-d); }
-#print-note-btn {
-  background:var(--bg); color:var(--ink2); border:1px solid var(--border);
-  border-radius:20px; padding:8px 12px; font-size:15px;
-  cursor:pointer; transition:all 0.15s;
-  display:none;
-}
-@media (max-width:640px){ #print-note-btn { display:inline-flex; align-items:center; } }
-#print-note-btn:hover { background:var(--teal-l); border-color:var(--teal); }
+
 
 #back-btn {
-  background:var(--bg); color:var(--ink2); border:1px solid var(--border);
-  border-radius:20px; padding:8px 16px;
-  font-family:var(--font); font-size:13px; font-weight:600;
-  cursor:pointer; transition:all 0.15s;
-  display:none;
+  display:none; align-items:center; gap:6px;
+  background:var(--surface); color:var(--ink2);
+  border:1px solid var(--border); border-radius:20px;
+  padding:8px 16px; font-family:var(--font); font-size:13px; font-weight:600;
+  cursor:pointer; transition:all 0.18s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.06);
 }
-#back-btn:hover { background:var(--teal-l); color:var(--teal); border-color:var(--teal); }
+#back-btn:hover { background:var(--teal-l); color:var(--teal); border-color:var(--teal); transform:translateX(-2px); }
+#back-btn:active { transform:translateX(-4px); }
+#back-btn svg { transition:transform 0.18s; }
+#back-btn:hover svg { transform:translateX(-2px); }
 body.dark #back-btn { background:var(--surface); border-color:var(--border); color:var(--ink2); }
-@media (max-width:640px) { #back-btn { display:flex; align-items:center; gap:4px; } }
+@media (max-width:640px) { #back-btn { display:flex; } }
 
 /* ══════════ EMPTY STATE ══════════ */
 #empty-state {
@@ -1155,6 +1159,16 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
       <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Iniciar sesión</button>
       <div id="auth-forgot" onclick="forgotPassword()" style="text-align:center;margin-top:12px;font-size:13px;color:var(--teal);cursor:pointer">¿Olvidaste tu contraseña?</div>
     </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);text-align:center">
+      <p style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:10px">¿Sin cuenta? Puedes usar la app sin registrarte</p>
+      <button onclick="enterGuest()" style="width:100%;padding:13px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Continuar sin cuenta
+      </button>
+      <p style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:8px">📱 Datos guardados solo en este dispositivo</p>
+    </div>
+
   </div><!-- end auth-form-wrap -->
 </div>
 <div id="app">
@@ -1288,8 +1302,10 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
       <div id="editor-bottom">
         <span id="word-count">0 palabras</span>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button id="print-note-btn" onclick="printCurrentNote()" title="Imprimir">🖨️</button>
-          <button id="back-btn" onclick="goBack()" title="Volver a notas">← Notas</button>
+          <button id="back-btn" onclick="goBack()" title="Volver a notas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15,18 9,12 15,6"/></svg>
+            Notas
+          </button>
           <button id="save-btn" onclick="openSaveModal()">💾 Guardar</button>
         </div>
       </div>
@@ -1339,6 +1355,12 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
               <div id="calc-expr"></div>
               <div id="calc-result">0</div>
             </div>
+            <!-- Mode toggle -->
+            <div id="calc-mode-btns">
+              <button class="calc-mode-btn active" onclick="setCalcMode('basic')">Básica</button>
+              <button class="calc-mode-btn" onclick="setCalcMode('sci')">Científica</button>
+            </div>
+            <!-- Basic keys (always visible) -->
             <div id="calc-keys">
               <button class="ck op" onclick="calcOp('AC')">AC</button>
               <button class="ck op" onclick="calcOp('+/-')">+/-</button>
@@ -1356,10 +1378,28 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
               <button class="ck" onclick="calcKey('2')">2</button>
               <button class="ck" onclick="calcKey('3')">3</button>
               <button class="ck fn" onclick="calcOp('+')">+</button>
+              <button class="ck op" onclick="calcBackspace()">⌫</button>
               <button class="ck wide" onclick="calcKey('0')">0</button>
               <button class="ck" onclick="calcKey('.')">.</button>
-              <button class="ck op" onclick="calcBackspace()">⌫</button>
-              <button class="ck eq" style="grid-column:span 4;text-align:center" onclick="calcOp('=')">=</button>
+              <button class="ck eq" onclick="calcOp('=')">=</button>
+            </div>
+            <!-- Scientific keys (hidden by default) -->
+            <div id="calc-sci-keys" style="display:none">
+              <button class="ck sci" onclick="calcSci('sin')">sin</button>
+              <button class="ck sci" onclick="calcSci('cos')">cos</button>
+              <button class="ck sci" onclick="calcSci('tan')">tan</button>
+              <button class="ck sci" onclick="calcSci('log')">log</button>
+              <button class="ck sci" onclick="calcSci('ln')">ln</button>
+              <button class="ck sci" onclick="calcSci('sqrt')">√</button>
+              <button class="ck sci" onclick="calcSci('sq')">x²</button>
+              <button class="ck sci" onclick="calcSci('cube')">x³</button>
+              <button class="ck sci" onclick="calcSci('inv')">1/x</button>
+              <button class="ck sci" onclick="calcSci('pi')">π</button>
+              <button class="ck sci" onclick="calcSci('e')">e</button>
+              <button class="ck sci" onclick="calcSci('fact')">n!</button>
+              <button class="ck sci" onclick="calcKey('(')">( )</button>
+              <button class="ck sci" onclick="calcOp('^')">xʸ</button>
+              <button class="ck sci" onclick="calcSci('abs')">|x|</button>
             </div>
           </div>
         </div>
@@ -1642,7 +1682,6 @@ body.dark .settings-select { background:var(--surface); border-color:var(--borde
   <button onclick="ctxTogglePriority()">⭐ <span id="ctx-priority-lbl">Marcar prioritaria</span></button>
 
   <button onclick="ctxLockNote()">🔒 <span id="ctx-lock-lbl">Bloquear con PIN</span></button>
-  <button onclick="ctxPrint()">🖨️ Imprimir nota</button>
   <button onclick="ctxDupe()">📄 Duplicar</button>
   <div class="ctx-sep"></div>
   <button onclick="ctxDel()" class="danger">🗑️ Eliminar</button>
@@ -1687,6 +1726,7 @@ if(auth){
     const formWrap = document.getElementById('auth-form-wrap');
     if(user){
       currentUser = user;
+      localStorage.removeItem('fn_guest_mode'); // exit guest mode on login
       const btn = document.getElementById('user-avatar-btn');
       if(btn) btn.innerHTML = '<span style="font-size:13px;font-weight:700">' + user.email.charAt(0).toUpperCase() + '</span>';
       document.getElementById('auth-screen').classList.add('hidden');
@@ -1705,6 +1745,19 @@ if(auth){
   // No Firebase — hide auth screen
   const authScr = document.getElementById('auth-screen');
   if(authScr) authScr.classList.add('hidden');
+}
+
+function enterGuest(){
+  // Save guest mode so it persists on reload
+  localStorage.setItem('fn_guest_mode', '1');
+  document.getElementById('auth-screen').classList.add('hidden');
+  currentUser = null;
+  loadNotes();
+  renderList();
+  renderPriorityIcons();
+  // Update avatar to show guest icon
+  const btn = document.getElementById('user-avatar-btn');
+  if(btn) btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 }
 
 function switchAuthTab(mode){
@@ -1781,9 +1834,22 @@ async function forgotPassword(){
 }
 
 function showUserMenu(){
-  if(!currentUser) return;
-  const menu = `
-    <div id="user-dropdown" style="position:fixed;top:60px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.15);z-index:9999;min-width:220px;overflow:hidden">
+  const dd = document.getElementById('user-dropdown');
+  if(dd){ dd.remove(); return; }
+
+  let menuHTML;
+  if(!currentUser){
+    // Guest mode menu
+    menuHTML = `<div id="user-dropdown" style="position:fixed;top:60px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.15);z-index:9999;min-width:220px;overflow:hidden">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">Modo sin cuenta</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">📱 Datos guardados localmente</div>
+      </div>
+      <button onclick="exitGuestAndLogin()" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;border:none;background:none;font-family:var(--font);font-size:14px;color:var(--teal);cursor:pointer;text-align:left;font-weight:700">✨ Crear cuenta o iniciar sesión</button>
+    </div>`;
+  } else {
+    // Logged in menu
+    menuHTML = `<div id="user-dropdown" style="position:fixed;top:60px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,0.15);z-index:9999;min-width:220px;overflow:hidden">
       <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
         <div style="font-size:13px;font-weight:700;color:var(--ink)">${currentUser.email}</div>
         <div style="font-size:11px;color:var(--teal);margin-top:2px">☁️ Sincronizado con la nube</div>
@@ -1791,20 +1857,29 @@ function showUserMenu(){
       <button onclick="syncNow()" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;border:none;background:none;font-family:var(--font);font-size:14px;color:var(--ink);cursor:pointer;text-align:left">🔄 Sincronizar ahora</button>
       <button onclick="signOut()" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;border:none;background:none;font-family:var(--font);font-size:14px;color:#c62828;cursor:pointer;text-align:left">🚪 Cerrar sesión</button>
     </div>`;
-  // Remove if exists
-  const existing = document.getElementById('user-dropdown');
-  if(existing){ existing.remove(); return; }
-  document.body.insertAdjacentHTML('beforeend', menu);
-  // Close on outside click
+  }
+
+  document.body.insertAdjacentHTML('beforeend', menuHTML);
   setTimeout(()=>{
     document.addEventListener('click', function handler(e){
-      const dd = document.getElementById('user-dropdown');
-      if(dd && !dd.contains(e.target) && e.target.id !== 'user-avatar-btn'){
-        dd.remove();
+      const dd2 = document.getElementById('user-dropdown');
+      if(dd2 && !dd2.contains(e.target) && e.target.id !== 'user-avatar-btn'){
+        dd2.remove();
       }
       document.removeEventListener('click', handler);
     });
   }, 100);
+}
+
+function exitGuestAndLogin(){
+  const dd = document.getElementById('user-dropdown');
+  if(dd) dd.remove();
+  localStorage.removeItem('fn_guest_mode');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  const loading = document.getElementById('auth-loading');
+  const formWrap = document.getElementById('auth-form-wrap');
+  if(loading) loading.style.display = 'none';
+  if(formWrap) formWrap.style.display = 'block';
 }
 
 async function signOut(){
@@ -2560,6 +2635,15 @@ function ctxPrint(){
   currentId = savedId;
 }
 
+function ctxTogglePriority(){
+  hideCtx();
+  const n = notes.find(x=>x.id===ctxTargetId);
+  if(!n) return;
+  n.pinned = !n.pinned;
+  saveNotes(); renderList(); renderPriorityIcons();
+  toast('⭐', n.pinned ? 'Marcada como prioritaria' : 'Quitada de prioritarias');
+}
+
 function ctxDupe(){
   const n=notes.find(x=>x.id===ctxTargetId);
   if(n){const c={...n,id:uid(),title:n.title+' (copia)',pinned:false,created:new Date().toISOString()};notes.unshift(c);saveNotes();renderList();toast('📄','Duplicada');}
@@ -3125,7 +3209,14 @@ function switchRTab(name){
 }
 
 // ══════════ CALCULADORA ═══════════════════════════════════════════════════
+// ══════════ CALCULATOR ════════════════════════════════════════════════════
 let calcCurrent='0', calcPrev='', calcOper='', calcNewNum=true;
+let calcParenOpen=0;
+
+function setCalcMode(mode){
+  document.querySelectorAll('.calc-mode-btn').forEach((b,i)=> b.classList.toggle('active', (mode==='basic'&&i===0)||(mode==='sci'&&i===1)));
+  document.getElementById('calc-sci-keys').style.display = mode==='sci' ? 'grid' : 'none';
+}
 
 function calcKey(k){
   if(calcNewNum){calcCurrent=k==='.'?'0.':k;calcNewNum=false;}
@@ -3135,6 +3226,42 @@ function calcKey(k){
   }
   document.getElementById('calc-result').textContent=calcCurrent;
 }
+function calcSci(fn){
+  const cur = parseFloat(calcCurrent);
+  let res;
+  const DEG = Math.PI/180;
+  switch(fn){
+    case 'sin':  res = Math.sin(cur*DEG); break;
+    case 'cos':  res = Math.cos(cur*DEG); break;
+    case 'tan':  res = Math.tan(cur*DEG); break;
+    case 'log':  res = Math.log10(cur); break;
+    case 'ln':   res = Math.log(cur); break;
+    case 'sqrt': res = Math.sqrt(cur); break;
+    case 'sq':   res = cur*cur; break;
+    case 'cube': res = cur*cur*cur; break;
+    case 'inv':  res = 1/cur; break;
+    case 'abs':  res = Math.abs(cur); break;
+    case 'pi':   calcCurrent = String(Math.PI); calcNewNum = false; document.getElementById('calc-result').textContent = formatCalcNum(Math.PI); return;
+    case 'e':    calcCurrent = String(Math.E); calcNewNum = false; document.getElementById('calc-result').textContent = formatCalcNum(Math.E); return;
+    case 'fact':
+      if(cur < 0 || cur > 170 || !Number.isInteger(cur)){ document.getElementById('calc-result').textContent = 'Error'; return; }
+      res = 1; for(let i=2;i<=cur;i++) res*=i;
+      break;
+    default: return;
+  }
+  if(isNaN(res)||!isFinite(res)){ document.getElementById('calc-result').textContent = 'Error'; return; }
+  calcCurrent = String(res);
+  calcNewNum = true;
+  document.getElementById('calc-result').textContent = formatCalcNum(res);
+  document.getElementById('calc-expr').textContent = fn + '(' + cur + ') =';
+}
+
+function formatCalcNum(n){
+  if(Number.isInteger(n)) return String(n);
+  const s = n.toPrecision(10).replace(/\.?0+$/,'');
+  return s.length > 12 ? n.toExponential(4) : s;
+}
+
 function calcBackspace(){
   if(calcNewNum) return;
   if(calcCurrent.length <= 1){
@@ -3149,7 +3276,8 @@ function calcOp(op){
   const cur=parseFloat(calcCurrent);
   if(op==='AC'){calcCurrent='0';calcPrev='';calcOper='';calcNewNum=true;document.getElementById('calc-expr').textContent='';document.getElementById('calc-result').textContent='0';return;}
   if(op==='+/-'){calcCurrent=String(-cur);document.getElementById('calc-result').textContent=calcCurrent;return;}
-  if(op==='%'){calcCurrent=String(cur/100);document.getElementById('calc-result').textContent=calcCurrent;return;}
+  if(op==='%'){calcCurrent=String(cur/100);document.getElementById('calc-result').textContent=formatCalcNum(cur/100);return;}
+  if(op==='^'){calcPrev=String(cur);calcOper='^';calcNewNum=true;document.getElementById('calc-expr').textContent=formatCalcNum(cur)+' ^';return;}
   if(op==='='){
     if(!calcOper)return;
     const prev=parseFloat(calcPrev);
@@ -3678,8 +3806,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ══════════ AUTOSAVE ══════════════════════════════════════════════════════
 let asSave;
 document.addEventListener('DOMContentLoaded',()=>{
-  // If Firebase not available, skip auth screen and use local storage only
-  if(!auth){
+  // If Firebase not available or guest mode, skip auth screen
+  if(!auth || localStorage.getItem('fn_guest_mode')==='1'){
     const authScr = document.getElementById('auth-screen');
     if(authScr) authScr.classList.add('hidden');
   }
